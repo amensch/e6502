@@ -1,0 +1,6 @@
+C:\Users\adam\Documents\My Projects\e6502\e6502CPU\bin\Debug\e6502CPU.dll
+C:\Users\adam\Documents\My Projects\e6502\e6502CPU\bin\Debug\e6502CPU.pdb
+C:\Users\adam\Documents\My Projects\e6502\e6502CPU\obj\Debug\e6502CPU.csprojResolveAssemblyReference.cache
+C:\Users\adam\Documents\My Projects\e6502\e6502CPU\obj\Debug\e6502CPU.dll
+C:\Users\adam\Documents\My Projects\e6502\e6502CPU\obj\Debug\e6502CPU.pdb
+C:\Users\adam\Documents\My Projects\e6502\e6502CPU\bin\Debug\OpcodeList.txt

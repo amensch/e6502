@@ -1,0 +1,17 @@
+C:\Users\adam\Documents\My Projects\e6502\e6502\bin\Debug\e6502.exe.config
+C:\Users\adam\Documents\My Projects\e6502\e6502\bin\Debug\e6502.exe
+C:\Users\adam\Documents\My Projects\e6502\e6502\bin\Debug\e6502.pdb
+C:\Users\adam\Documents\My Projects\e6502\e6502\bin\Debug\e6502CPU.dll
+C:\Users\adam\Documents\My Projects\e6502\e6502\bin\Debug\e6502CPU.pdb
+C:\Users\adam\Documents\My Projects\e6502\e6502\obj\Debug\e6502.csprojResolveAssemblyReference.cache
+C:\Users\adam\Documents\My Projects\e6502\e6502\obj\Debug\MainWindow.g.cs
+C:\Users\adam\Documents\My Projects\e6502\e6502\obj\Debug\App.g.cs
+C:\Users\adam\Documents\My Projects\e6502\e6502\obj\Debug\e6502_MarkupCompile.cache
+C:\Users\adam\Documents\My Projects\e6502\e6502\obj\Debug\e6502_MarkupCompile.lref
+C:\Users\adam\Documents\My Projects\e6502\e6502\obj\Debug\MainWindow.baml
+C:\Users\adam\Documents\My Projects\e6502\e6502\obj\Debug\e6502.g.resources
+C:\Users\adam\Documents\My Projects\e6502\e6502\obj\Debug\e6502.Properties.Resources.resources
+C:\Users\adam\Documents\My Projects\e6502\e6502\obj\Debug\e6502.csproj.GenerateResource.Cache
+C:\Users\adam\Documents\My Projects\e6502\e6502\obj\Debug\e6502.exe
+C:\Users\adam\Documents\My Projects\e6502\e6502\obj\Debug\e6502.pdb
+C:\Users\adam\Documents\My Projects\e6502\e6502\bin\Debug\OpcodeList.txt
