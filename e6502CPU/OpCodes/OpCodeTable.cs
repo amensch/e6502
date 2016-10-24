@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using System.Diagnostics;
 
 namespace e6502CPU
 {
@@ -19,6 +20,12 @@ namespace e6502CPU
                 OpCodes[ii] = new OpCodeRecord();
             }
             CreateTable();
+
+            foreach(var op in OpCodes)
+            {
+                if (op.CheckBranchPage)
+                    Debug.WriteLine(op.ToString());
+            }
         }
 
         private void CreateTable()
@@ -35,8 +42,10 @@ namespace e6502CPU
             int rec_opcode;
             string rec_instr;
             AddressModes rec_mode;
-            int rec_bytes;
+            ushort rec_bytes;
             int rec_cycles;
+            bool rec_checkPageBoundary;
+            bool rec_checkBranchPage;
 
             // throw away the first two lines
             sr.ReadLine();
@@ -51,7 +60,11 @@ namespace e6502CPU
                     instruction = line.Substring(14, 14).Trim();
                     opcode = line.Substring(28, 6).Trim();
                     bytes = line.Substring(34, 6).Trim();
-                    cycles = line.Substring(40,1).Trim();
+                    cycles = line.Substring(40).Trim();
+
+                    rec_checkPageBoundary = (cycles.Length == 2);
+                    rec_checkBranchPage = (cycles.Length == 3);
+                    cycles = cycles.Substring(0,1);
                     
 
                     if( !int.TryParse(opcode, System.Globalization.NumberStyles.AllowHexSpecifier, null, out rec_opcode))
@@ -113,7 +126,7 @@ namespace e6502CPU
                             throw new InvalidDataException("Line + [" + line + "] (addressing) has invalid data");
 
                     }
-                    if (!int.TryParse(bytes, out rec_bytes))
+                    if (!ushort.TryParse(bytes, out rec_bytes))
                     {
                         throw new InvalidDataException("Line + [" + line + "] (bytes) has invalid data");
                     }
@@ -122,7 +135,8 @@ namespace e6502CPU
                         throw new InvalidDataException("Line + [" + line + "] (cycles) has invalid data");
                     }
 
-                    OpCodes[rec_opcode] = new OpCodeRecord(rec_opcode, rec_instr, rec_mode, rec_bytes, rec_cycles);
+                    OpCodes[rec_opcode] = new OpCodeRecord(rec_opcode, rec_instr, rec_mode, rec_bytes, rec_cycles,
+                        rec_checkPageBoundary, rec_checkBranchPage);
 
                 }
 

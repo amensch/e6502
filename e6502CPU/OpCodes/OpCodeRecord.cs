@@ -11,23 +11,30 @@ namespace e6502CPU
         public int OpCode { get; private set; }
         public string Instruction { get; private set; }
         public AddressModes AddressMode { get; private set; }
-        public int Bytes { get; private set; }
+        public ushort Bytes { get; private set; }
         public int Cycles { get; private set; }
+        public bool CheckPageBoundary { get; private set; }
+        public bool CheckBranchPage { get; private set; }
         public bool IsValid { get; private set; }
 
         public OpCodeRecord()
         {
             Bytes = 1;
+            CheckBranchPage = false;
+            CheckPageBoundary = false;
             IsValid = false;
         }
 
-        public OpCodeRecord(int opcode, string instruction, AddressModes addressmode, int bytes, int cycles)
+        public OpCodeRecord(int opcode, string instruction, AddressModes addressmode, ushort bytes, int cycles,
+                               bool checkPageBoundary, bool checkBranchPage )
         {
             OpCode = opcode;
             Instruction = instruction;
             AddressMode = addressmode;
             Bytes = bytes;
             Cycles = cycles;
+            CheckPageBoundary = checkPageBoundary;
+            CheckBranchPage = checkBranchPage;
             IsValid = true;
         }
 
@@ -54,6 +61,8 @@ namespace e6502CPU
                 case AddressModes.Accumulator:
                     dasm += " A";
                     break;
+
+                // Absolute mode prints the address with no parenthesis
                 case AddressModes.Absolute:
                     dasm += " $" + oper.ToString("X4");
                     break;
@@ -63,9 +72,13 @@ namespace e6502CPU
                 case AddressModes.AbsoluteY:
                     dasm += " $" + oper.ToString("X4") + ",Y";
                     break;
+
+                // No parenthesis for relative branches
                 case AddressModes.Relative:
                     dasm += " $" + oper.ToString("X2");
                     break;
+
+                // Zero page is also direct addressing so no parenthesis
                 case AddressModes.ZeroPage:
                     dasm += " $" + oper.ToString("X2");
                     break;
@@ -75,9 +88,13 @@ namespace e6502CPU
                 case AddressModes.ZeroPageY:
                     dasm += " $" + oper.ToString("X2") + ",Y";
                     break;
+
+                // # sign indicates immediate
                 case AddressModes.Immediate:
                     dasm += " #$" + oper.ToString("X2");
                     break;
+
+                // parenthesis indicate an indirect addressing into memory
                 case AddressModes.Indirect:
                     dasm += " ($" + oper.ToString("X4") + ")";
                     break;
@@ -87,6 +104,7 @@ namespace e6502CPU
                 case AddressModes.IndirectY:
                     dasm += " ($" + oper.ToString("X2") + "),Y";
                     break;
+
                 case AddressModes.Implied: // do nothing
                 default:
                     break;

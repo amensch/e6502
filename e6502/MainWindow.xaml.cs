@@ -26,6 +26,8 @@ namespace e6502
 
             OpCodeTable ot = new OpCodeTable();
 
+            
+
         }
     }
 }
