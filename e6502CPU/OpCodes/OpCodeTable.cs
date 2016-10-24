@@ -30,7 +30,7 @@ namespace e6502CPU
 
         private void CreateTable()
         {
-            StreamReader sr = new StreamReader("OpcodeList.txt");
+            StreamReader sr = new StreamReader("OpCodes\\OpcodeList.txt");
             string line;
 
             string address;

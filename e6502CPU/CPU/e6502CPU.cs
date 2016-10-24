@@ -6,36 +6,36 @@ using System.Threading.Tasks;
 
 namespace e6502CPU
 {
-    public class e6502CPU
+    public class e6502
     {
         // Main Register
-        private byte A;
+        public byte A;
 
         // Index Registers
-        private byte X;
-        private byte Y;
+        public byte X;
+        public byte Y;
 
-        // Progream Counter
-        private ushort PC;
+        // Program Counter
+        public ushort PC;
 
         // Stack Pointer
         // Memory location is hard coded to 0x01xx
         // Stack is descending (decrement on push, increment on pop)
         // 6502 is an empty stack so SP points to where next value is stored
-        private byte SP;
+        public byte SP;
 
         // Status Registers (in order bit 7 to 0)
-        private bool nf;    // negative flag (N)
-        private bool of;    // overflow flag (V)
+        public bool NF;    // negative flag (N)
+        public bool VF;    // overflow flag (V)
         // bit 5 not used
-        private bool bf;    // breakpoint flag (B)
-        private bool df;    // binary coded decimal flag (D)
-        private bool intf;  // interrupt flag (I)
-        private bool zf;    // zero flag (Z)
-        private bool cf;    // carry flag (C)
+        public bool BF;    // breakpoint flag (B)
+        public bool DF;    // binary coded decimal flag (D)
+        public bool IF;  // interrupt flag (I)
+        public bool ZF;    // zero flag (Z)
+        public bool CF;    // carry flag (C)
 
         // RAM - 16 bit address bus means 64KB of addressable memory
-        private byte[] memory;
+        public byte[] memory;
 
         // List of op codes and their attributes
         private OpCodeTable _opCodeTable;
@@ -49,7 +49,7 @@ namespace e6502CPU
         // Clock cycles to add due to page boundaries being crossed
         private int _extraCycles;
 
-        public e6502CPU()
+        public e6502()
         {
             memory = new byte[0x10000];
             _opCodeTable = new OpCodeTable();
@@ -61,13 +61,13 @@ namespace e6502CPU
             Y = 0;
             SP = 0;
             PC = 0;
-            nf = false;
-            of = false;
-            bf = false;
-            df = false;
-            intf = false;
-            zf = false;
-            cf = false;
+            NF = false;
+            VF = false;
+            BF = false;
+            DF = false;
+            IF = false;
+            ZF = false;
+            CF = false;
         }
 
         public void Boot()
@@ -75,6 +75,8 @@ namespace e6502CPU
             // On reset the addresses 0xfffc and 0xfffd are read and PC is loaded with this value.
             // It is expected that the initial program loaded will have these values set to something.
             // Most 6502 systems contain ROM in the upper region (around 0xe000-0xffff)
+            PC = (ushort)((memory[0xfffd] << 8 | memory[0xfffc]) & 0xffff);
+
         }
 
         public void LoadProgram(ushort startingAddress, byte[] program)
@@ -97,7 +99,6 @@ namespace e6502CPU
         public int ExecuteNext()
         {
             _currentOP = _opCodeTable.OpCodes[memory[PC]];
-            PC += _currentOP.Bytes;
             _extraCycles = 0;
 
             ExecuteInstruction();
@@ -112,7 +113,7 @@ namespace e6502CPU
 
             // Temporarily store results so flag calculations can be made
             int result;
-            int oper = memory[GetOperand(_currentOP.AddressMode)];
+            int oper = GetOperand(_currentOP.AddressMode);
 
             switch (_currentOP.OpCode)
             {
@@ -127,14 +128,15 @@ namespace e6502CPU
                 case 0x79:
                 case 0x7d:
                     result = A + oper;
-                    if (cf) result++;
+                    if (CF) result++;
 
-                    cf = (result > 0xff);
-                    zf = ((result & 0xff) == 0x00);
-                    nf = ((result & 0x80) == 0x80);
-                    of = ((result ^ A) & (result ^ oper) & 0x80) == 0x80;
+                    CF = ((result & 0x100) == 0x100);
+                    ZF = ((result & 0xff) == 0x00);
+                    NF = ((result & 0x80) == 0x80);
+                    VF = ((result ^ A) & (result ^ oper) & 0x80) == 0x80;
 
                     A = (byte)result;
+                    PC += _currentOP.Bytes;
                     break;
 
                 // AND - and memory with accumulator
@@ -149,10 +151,11 @@ namespace e6502CPU
                 case 0x3d:
                     result = A & oper;
 
-                    nf = ((result & 0x80) == 0x80);
-                    zf = ((result & 0xff) == 0x00);
+                    NF = ((result & 0x80) == 0x80);
+                    ZF = ((result & 0xff) == 0x00);
 
                     A = (byte)result;
+                    PC += _currentOP.Bytes;
                     break;
 
                 // ASL - shift left one bit (NZC)
@@ -165,21 +168,23 @@ namespace e6502CPU
                 case 0x1e:
 
                     // shift bit 7 into carry
-                    cf = (oper >= 0x80);
+                    CF = (oper >= 0x80);
 
                     // shift operand
                     result = oper << 1;
 
-                    nf = ((result & 0x80) == 0x80);
-                    zf = ((result & 0xff) == 0x00);
+                    NF = ((result & 0x80) == 0x80);
+                    ZF = ((result & 0xff) == 0x00);
 
                     SaveOperand(_currentOP.AddressMode, result);
+                    PC += _currentOP.Bytes;
 
                     break;
 
                 // BCC - branch on carry clear
                 case 0x90:
-                    if (!cf)
+                    PC += _currentOP.Bytes;
+                    if (!CF)
                     {
                         if (_currentOP.CheckBranchPage)
                         {
@@ -188,13 +193,14 @@ namespace e6502CPU
                             else if ((PC & 0xff00) != ((PC + oper) & 0xff00))
                                 _extraCycles = 2;
                         }
-                        PC += (ushort)oper;
+                        PC += (ushort)oper; 
                     }
                     break;
 
                 // BCS - branch on carry set
                 case 0xb0:
-                    if (cf)
+                    PC += _currentOP.Bytes;
+                    if (CF)
                     {
                         if (_currentOP.CheckBranchPage)
                         {
@@ -209,7 +215,8 @@ namespace e6502CPU
 
                 // BEQ - branch on zero
                 case 0xf0:
-                    if (zf)
+                    PC += _currentOP.Bytes;
+                    if (ZF)
                     {
                         if (_currentOP.CheckBranchPage)
                         {
@@ -229,15 +236,17 @@ namespace e6502CPU
                 case 0x2c:
                     result = A & oper;
 
-                    nf = ((oper & 0x80) == 0x80);
-                    of = ((oper & 0x40) == 0x40);
-                    zf = ((result & 0xff) == 0x00);
+                    NF = ((oper & 0x80) == 0x80);
+                    VF = ((oper & 0x40) == 0x40);
+                    ZF = ((result & 0xff) == 0x00);
 
+                    PC += _currentOP.Bytes;
                     break;
 
                 // BMI - branch on negative
                 case 0x30:
-                    if (nf)
+                    PC += _currentOP.Bytes;
+                    if (NF)
                     {
                         if (_currentOP.CheckBranchPage)
                         {
@@ -252,7 +261,8 @@ namespace e6502CPU
 
                 // BNE - branch on non zero
                 case 0xd0:
-                    if (!zf)
+                    PC += _currentOP.Bytes;
+                    if (!ZF)
                     {
                         if (_currentOP.CheckBranchPage)
                         {
@@ -267,7 +277,8 @@ namespace e6502CPU
 
                 // BPL - branch on non negative
                 case 0x10:
-                    if (!nf)
+                    PC += _currentOP.Bytes;
+                    if (!NF)
                     {
                         if (_currentOP.CheckBranchPage)
                         {
@@ -282,30 +293,33 @@ namespace e6502CPU
 
                 // BRK - force break (I)
                 case 0x00:
+                    PC += _currentOP.Bytes;
+
                     // push PC
                     Push(PC);
 
                     // push SR
                     int sr = 0x00;
 
-                    if (nf) sr = sr & 0x80;
-                    if (of) sr = sr & 0x40;
+                    if (NF) sr = sr & 0x80;
+                    if (VF) sr = sr & 0x40;
                     // no bit 5
-                    if (bf) sr = sr & 0x10;
-                    if (df) sr = sr & 0x08;
-                    if (intf) sr = sr & 0x04;
-                    if (zf) sr = sr & 0x02;
-                    if (cf) sr = sr & 0x01;
+                    if (BF) sr = sr & 0x10;
+                    if (DF) sr = sr & 0x08;
+                    if (IF) sr = sr & 0x04;
+                    if (ZF) sr = sr & 0x02;
+                    if (CF) sr = sr & 0x01;
 
                     Push((byte)sr);
 
                     // set interrupt flag
-                    intf = true;
+                    IF = true;
                     break;
 
                 // BVC - branch on overflow clear
                 case 0x50:
-                    if (!of)
+                    PC += _currentOP.Bytes;
+                    if (!VF)
                     {
                         if (_currentOP.CheckBranchPage)
                         {
@@ -320,7 +334,8 @@ namespace e6502CPU
 
                 // BVS - branch on overflow set
                 case 0x70:
-                    if (of)
+                    PC += _currentOP.Bytes;
+                    if (VF)
                     {
                         if (_currentOP.CheckBranchPage)
                         {
@@ -335,22 +350,26 @@ namespace e6502CPU
 
                 // CLC - clear carry flag
                 case 0x18:
-                    cf = false;
+                    CF = false;
+                    PC += _currentOP.Bytes;
                     break;
 
                 // CLD - clear decimal mode
                 case 0xd8:
-                    df = false;
+                    DF = false;
+                    PC += _currentOP.Bytes;
                     break;
 
                 // CLI - clear interrupt disable bit
                 case 0x58:
-                    intf = false;
+                    IF = false;
+                    PC += _currentOP.Bytes;
                     break;
 
                 // CLV - clear overflow flag
                 case 0xb8:
-                    of = false;
+                    VF = false;
+                    PC += _currentOP.Bytes;
                     break;
 
                 // CMP - compare memory with accumulator (NZC)
@@ -364,10 +383,11 @@ namespace e6502CPU
                 case 0xdd:
                     result = A - (byte)oper;
 
-                    cf = (result > 0xff);
-                    zf = ((result & 0xff) == 0x00);
-                    nf = ((result & 0x80) == 0x80);
+                    CF = ((result & 0x100) == 0x100);
+                    ZF = ((result & 0xff) == 0x00);
+                    NF = ((result & 0x80) == 0x80);
 
+                    PC += _currentOP.Bytes;
                     break;
 
                 // CPX - compare memory and X (NZC)
@@ -376,22 +396,24 @@ namespace e6502CPU
                 case 0xec:
                     result = X - (byte)oper;
 
-                    cf = (result > 0xff);
-                    zf = ((result & 0xff) == 0x00);
-                    nf = ((result & 0x80) == 0x80);
+                    CF = ((result & 0x100) == 0x100);
+                    ZF = ((result & 0xff) == 0x00);
+                    NF = ((result & 0x80) == 0x80);
 
+                    PC += _currentOP.Bytes;
                     break;
 
                 // CPY - compare memory and Y (NZC)
                 case 0xc0:
                 case 0xc4:
                 case 0xcc:
-                    result = Y - (byte)oper;
+                    result = Y + (~(byte)oper + 1);
 
-                    cf = (result > 0xff);
-                    zf = ((result & 0xff) == 0x00);
-                    nf = ((result & 0x80) == 0x80);
+                    CF = ((result & 0x100) == 0x100);
+                    ZF = ((result & 0xff) == 0x00);
+                    NF = ((result & 0x80) == 0x80);
 
+                    PC += _currentOP.Bytes;
                     break;
 
                 // DEC - decrement memory by 1 (NZ)
@@ -401,31 +423,34 @@ namespace e6502CPU
                 case 0xde:
                     result = oper - 1;
 
-                    zf = ((result & 0xff) == 0x00);
-                    nf = ((result & 0x80) == 0x80);
+                    ZF = ((result & 0xff) == 0x00);
+                    NF = ((result & 0x80) == 0x80);
 
                     SaveOperand(_currentOP.AddressMode, result);
 
+                    PC += _currentOP.Bytes;
                     break;
 
                 // DEX - decrement X by one (NZ)
                 case 0xca:
                     result = X - 1;
 
-                    zf = ((result & 0xff) == 0x00);
-                    nf = ((result & 0x80) == 0x80);
+                    ZF = ((result & 0xff) == 0x00);
+                    NF = ((result & 0x80) == 0x80);
 
                     X = (byte)result;
+                    PC += _currentOP.Bytes;
                     break;
 
                 // DEY - decrement Y by one (NZ)
                 case 0x88:
                     result = Y - 1;
 
-                    zf = ((result & 0xff) == 0x00);
-                    nf = ((result & 0x80) == 0x80);
+                    ZF = ((result & 0xff) == 0x00);
+                    NF = ((result & 0x80) == 0x80);
 
                     Y = (byte)result;
+                    PC += _currentOP.Bytes;
                     break;
 
                 // EOR - XOR memory with accumulator (NZ)
@@ -439,11 +464,12 @@ namespace e6502CPU
                 case 0x5d:
                     result = A ^ (byte)oper;
 
-                    zf = ((result & 0xff) == 0x00);
-                    nf = ((result & 0x80) == 0x80);
+                    ZF = ((result & 0xff) == 0x00);
+                    NF = ((result & 0x80) == 0x80);
 
                     A = (byte)result;
 
+                    PC += _currentOP.Bytes;
                     break;
 
                 // INC - increment memory by 1 (NZ)
@@ -453,41 +479,57 @@ namespace e6502CPU
                 case 0xfe:
                     result = oper + 1;
 
-                    zf = ((result & 0xff) == 0x00);
-                    nf = ((result & 0x80) == 0x80);
+                    ZF = ((result & 0xff) == 0x00);
+                    NF = ((result & 0x80) == 0x80);
 
                     SaveOperand(_currentOP.AddressMode, result);
 
+                    PC += _currentOP.Bytes;
                     break;
 
                 // INX - increment X by one (NZ)
                 case 0xe8:
                     result = X + 1;
 
-                    zf = ((result & 0xff) == 0x00);
-                    nf = ((result & 0x80) == 0x80);
+                    ZF = ((result & 0xff) == 0x00);
+                    NF = ((result & 0x80) == 0x80);
 
                     X = (byte)result;
+                    PC += _currentOP.Bytes;
                     break;
 
                 // INY - increment Y by one (NZ)
                 case 0xc8:
                     result = Y + 1;
 
-                    zf = ((result & 0xff) == 0x00);
-                    nf = ((result & 0x80) == 0x80);
+                    ZF = ((result & 0xff) == 0x00);
+                    NF = ((result & 0x80) == 0x80);
 
                     Y = (byte)result;
+                    PC += _currentOP.Bytes;
                     break;
 
                 // JMP - jump to new location (two byte immediate)
                 case 0x4c:
                 case 0x6c:
-                    PC =(ushort) oper;
+
+                    if( _currentOP.AddressMode == AddressModes.Absolute)
+                    {
+                        PC = GetImmWord();
+                    }
+                    else if( _currentOP.AddressMode == AddressModes.Indirect)
+                    {
+                        PC = (ushort)(GetWordFromMemory(GetImmWord()));
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("This address mode is invalid with the JMP instruction");
+                    }
                     break;
 
                 // JSR - jump to new location and save return address
                 case 0x20:
+                    PC += _currentOP.Bytes;
                     Push(PC);
                     PC = GetImmWord();
                     break;
@@ -503,9 +545,10 @@ namespace e6502CPU
                 case 0xbd:
                     A = (byte)oper;
 
-                    zf = ((A & 0xff) == 0x00);
-                    nf = ((A & 0x80) == 0x80);
+                    ZF = ((A & 0xff) == 0x00);
+                    NF = ((A & 0x80) == 0x80);
 
+                    PC += _currentOP.Bytes;
                     break;
 
                 // LDX - load index X with memory (NZ)
@@ -516,9 +559,10 @@ namespace e6502CPU
                 case 0xbe:
                     X = (byte)oper;
 
-                    zf = ((X & 0xff) == 0x00);
-                    nf = ((X & 0x80) == 0x80);
+                    ZF = ((X & 0xff) == 0x00);
+                    NF = ((X & 0x80) == 0x80);
 
+                    PC += _currentOP.Bytes;
                     break;
 
                 // LDY - load index Y with memory (NZ)
@@ -529,9 +573,10 @@ namespace e6502CPU
                 case 0xbc:
                     Y = (byte)oper;
 
-                    zf = ((Y & 0xff) == 0x00);
-                    nf = ((Y & 0x80) == 0x80);
+                    ZF = ((Y & 0xff) == 0x00);
+                    NF = ((Y & 0x80) == 0x80);
 
+                    PC += _currentOP.Bytes;
                     break;
 
 
@@ -544,18 +589,20 @@ namespace e6502CPU
                 case 0x5e:
 
                     // shift bit 0 into carry
-                    cf = (oper >= 0x01);
+                    CF = (oper >= 0x01);
 
                     // shift operand
                     result = oper >> 1;
 
-                    zf = ((result & 0xff) == 0x00);
+                    ZF = ((result & 0xff) == 0x00);
                     SaveOperand(_currentOP.AddressMode, result);
 
+                    PC += _currentOP.Bytes;
                     break;
 
                 // NOP - no operation
                 case 0xea:
+                    PC += _currentOP.Bytes;
                     break;
 
                 // ORA - OR memory with accumulator (NZ)
@@ -569,52 +616,57 @@ namespace e6502CPU
                 case 0x1d:
                     result = A | (byte)oper;
 
-                    zf = ((result & 0xff) == 0x00);
-                    nf = ((result & 0x80) == 0x80);
+                    ZF = ((result & 0xff) == 0x00);
+                    NF = ((result & 0x80) == 0x80);
 
                     A = (byte)result;
 
+                    PC += _currentOP.Bytes;
                     break;
 
                 // PHA - push accumulator on stack
                 case 0x48:
                     Push(A);
+                    PC += _currentOP.Bytes;
                     break;
 
                 // PHP - push processor status on stack
                 case 0x08:
                     sr = 0x00;
 
-                    if (nf) sr = sr & 0x80;
-                    if (of) sr = sr & 0x40;
+                    if (NF) sr = sr & 0x80;
+                    if (VF) sr = sr & 0x40;
                     // no bit 5
-                    if (bf) sr = sr & 0x10;
-                    if (df) sr = sr & 0x08;
-                    if (intf) sr = sr & 0x04;
-                    if (zf) sr = sr & 0x02;
-                    if (cf) sr = sr & 0x01;
+                    if (BF) sr = sr & 0x10;
+                    if (DF) sr = sr & 0x08;
+                    if (IF) sr = sr & 0x04;
+                    if (ZF) sr = sr & 0x02;
+                    if (CF) sr = sr & 0x01;
 
                     Push((byte)sr);
+                    PC += _currentOP.Bytes;
                     break;
 
                 // PLA - pull accumulator from stack (NZ)
                 case 0x68:
                     A = PopByte();
-                    nf = (A & 0x80) == 0x80;
-                    zf = (A & 0x02) == 0x02;
+                    NF = (A & 0x80) == 0x80;
+                    ZF = (A & 0x02) == 0x02;
+                    PC += _currentOP.Bytes;
                     break;
 
                 // PLP - pull status from stack
                 case 0x28:
                     sr = PopByte();
 
-                    nf = (sr & 0x80) == 0x80;
-                    of = (sr & 0x40) == 0x40;
-                    bf = (sr & 0x10) == 0x10;
-                    df = (sr & 0x08) == 0x08;
-                    intf = (sr & 0x04) == 0x04;
-                    zf = (sr & 0x02) == 0x02;
-                    cf = (sr & 0x01) == 0x01;
+                    NF = (sr & 0x80) == 0x80;
+                    VF = (sr & 0x40) == 0x40;
+                    BF = (sr & 0x10) == 0x10;
+                    DF = (sr & 0x08) == 0x08;
+                    IF = (sr & 0x04) == 0x04;
+                    ZF = (sr & 0x02) == 0x02;
+                    CF = (sr & 0x01) == 0x01;
+                    PC += _currentOP.Bytes;
                     break;
 
                 // ROL - rotate left one bit (NZC)
@@ -626,10 +678,10 @@ namespace e6502CPU
                 case 0x3e:
 
                     // perserve existing cf value
-                    bool old_cf = cf;
+                    bool old_cf = CF;
 
                     // shift bit 7 into carry flag
-                    cf = (oper >= 0x80);
+                    CF = (oper >= 0x80);
 
                     // shift operand
                     result = oper << 1;
@@ -637,10 +689,11 @@ namespace e6502CPU
                     // old carry flag goes to bit zero
                     if (old_cf) result = result | 0x01;
 
-                    zf = ((result & 0xff) == 0x00);
-                    nf = ((result & 0x80) == 0x80);
+                    ZF = ((result & 0xff) == 0x00);
+                    NF = ((result & 0x80) == 0x80);
                     SaveOperand(_currentOP.AddressMode, result);
 
+                    PC += _currentOP.Bytes;
                     break;
 
                 // ROR - rotate right one bit (NZC)
@@ -652,10 +705,10 @@ namespace e6502CPU
                 case 0x7e:
 
                     // perserve existing cf value
-                    old_cf = cf;
+                    old_cf = CF;
 
                     // shift bit 0 into carry flag
-                    cf = (oper & 0x01) == 0x01;
+                    CF = (oper & 0x01) == 0x01;
 
                     // shift operand
                     result = oper >> 1;
@@ -663,10 +716,11 @@ namespace e6502CPU
                     // old carry flag goes to bit 7
                     if (old_cf) result = result | 0x80;
 
-                    zf = ((result & 0xff) == 0x00);
-                    nf = ((result & 0x80) == 0x80);
+                    ZF = ((result & 0xff) == 0x00);
+                    NF = ((result & 0x80) == 0x80);
                     SaveOperand(_currentOP.AddressMode, result);
 
+                    PC += _currentOP.Bytes;
                     break;
 
                 // RTI - return from interrupt
@@ -674,13 +728,13 @@ namespace e6502CPU
                     // pull SR
                     sr = PopByte();
 
-                    nf = (sr & 0x80) == 0x80;
-                    of = (sr & 0x40) == 0x40;
-                    bf = (sr & 0x10) == 0x10;
-                    df = (sr & 0x08) == 0x08;
-                    intf = (sr & 0x04) == 0x04;
-                    zf = (sr & 0x02) == 0x02;
-                    cf = (sr & 0x01) == 0x01;
+                    NF = (sr & 0x80) == 0x80;
+                    VF = (sr & 0x40) == 0x40;
+                    BF = (sr & 0x10) == 0x10;
+                    DF = (sr & 0x08) == 0x08;
+                    IF = (sr & 0x04) == 0x04;
+                    ZF = (sr & 0x02) == 0x02;
+                    CF = (sr & 0x01) == 0x01;
 
                     // pull PC
                     PC = PopWord();
@@ -703,29 +757,33 @@ namespace e6502CPU
                 case 0xf9:
                 case 0xfd:
                     result = A - oper;
-                    if (cf) result--;
+                    if (!CF) result--;
 
-                    cf = (result > 0xff);
-                    zf = ((result & 0xff) == 0x00);
-                    nf = ((result & 0x80) == 0x80);
-                    of = ((result ^ A) & (result ^ oper) & 0x80) == 0x80;
+                    CF = ((result & 0x100) == 0x100);
+                    ZF = ((result & 0xff) == 0x00);
+                    NF = ((result & 0x80) == 0x80);
+                    VF = ((result ^ A) & (result ^ oper) & 0x80) == 0x80;
 
                     A = (byte)result;
+                    PC += _currentOP.Bytes;
                     break;
 
                 // SEC - set carry flag
                 case 0x38:
-                    cf = true;
+                    CF = true;
+                    PC += _currentOP.Bytes;
                     break;
 
                 // SED - set decimal mode
                 case 0xf8:
-                    df = true;
+                    DF = true;
+                    PC += _currentOP.Bytes;
                     break;
 
                 // SEI - set interrupt disable bit
                 case 0x78:
-                    intf = true;
+                    IF = true;
+                    PC += _currentOP.Bytes;
                     break;
 
                 // STA - store accumulator in memory
@@ -737,6 +795,7 @@ namespace e6502CPU
                 case 0x99:
                 case 0x9d:
                     SaveOperand(_currentOP.AddressMode, A);
+                    PC += _currentOP.Bytes;
                     break;
 
                 // STX - store X in memory
@@ -744,6 +803,7 @@ namespace e6502CPU
                 case 0x8e:
                 case 0x96:
                     SaveOperand(_currentOP.AddressMode, X);
+                    PC += _currentOP.Bytes;
                     break;
 
                 // STY - store Y in memory
@@ -751,41 +811,47 @@ namespace e6502CPU
                 case 0x8c:
                 case 0x94:
                     SaveOperand(_currentOP.AddressMode, Y);
+                    PC += _currentOP.Bytes;
                     break;
 
                 // TAX - transfer accumulator to X (NZ)
                 case 0xaa:
                     X = A;
-                    zf = ((X & 0xff) == 0x00);
-                    nf = ((X & 0x80) == 0x80);
+                    ZF = ((X & 0xff) == 0x00);
+                    NF = ((X & 0x80) == 0x80);
+                    PC += _currentOP.Bytes;
                     break;
 
                 // TSX - transfer SP to X (NZ)
                 case 0xba:
                     X = SP;
-                    zf = ((X & 0xff) == 0x00);
-                    nf = ((X & 0x80) == 0x80);
+                    ZF = ((X & 0xff) == 0x00);
+                    NF = ((X & 0x80) == 0x80);
+                    PC += _currentOP.Bytes;
                     break;
 
                 // TXA - transfer X to A (NZ)
                 case 0x8a:
                     A = X;
-                    zf = ((A & 0xff) == 0x00);
-                    nf = ((A & 0x80) == 0x80);
+                    ZF = ((A & 0xff) == 0x00);
+                    NF = ((A & 0x80) == 0x80);
+                    PC += _currentOP.Bytes;
                     break;
 
                 // TXS - transfer X to SP (NZ)
                 case 0x9a:
                     SP = X;
-                    zf = ((SP & 0xff) == 0x00);
-                    nf = ((SP & 0x80) == 0x80);
+                    ZF = ((SP & 0xff) == 0x00);
+                    NF = ((SP & 0x80) == 0x80);
+                    PC += _currentOP.Bytes;
                     break;
 
                 // TYA - transfer Y to A (NZ)
                 case 0x98:
                     A = Y;
-                    zf = ((A & 0xff) == 0x00);
-                    nf = ((A & 0x80) == 0x80);
+                    ZF = ((A & 0xff) == 0x00);
+                    NF = ((A & 0x80) == 0x80);
+                    PC += _currentOP.Bytes;
                     break;
 
                 default:
@@ -803,10 +869,12 @@ namespace e6502CPU
                     oper = A;
                     break;
 
-                // Absolute mode retrieves the byte at the indicated memory location
+                // Retrieves the byte at the specified memory location
                 case AddressModes.Absolute:             
                     oper = memory[ GetImmWord() ];
                     break;
+
+                // Indexed absolute retrieves the byte at the specified memory location
                 case AddressModes.AbsoluteX:
 
                     ushort imm = GetImmWord();
@@ -963,12 +1031,12 @@ namespace e6502CPU
 
         private ushort GetImmWord()
         {
-            return (ushort)((memory[PC - 1] << 8 | memory[PC - 2]) & 0xffff);
+            return (ushort)((memory[PC + 2] << 8 | memory[PC + 1]) & 0xffff);
         }
 
         private byte GetImmByte()
         {
-            return memory[PC - 1];
+            return memory[PC + 1];
         }
 
         private int SignExtend(int num)
