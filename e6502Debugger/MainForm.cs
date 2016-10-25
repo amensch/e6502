@@ -10,6 +10,8 @@ using System.Windows.Forms;
 using System.IO;
 using e6502CPU;
 
+// NOTES:  next trap is at 0x07bb
+
 namespace e6502Debugger
 {
     public partial class MainForm : Form
@@ -34,6 +36,12 @@ namespace e6502Debugger
             txtBreakPoint.Text = "";
 
             cpu = new e6502();
+
+            // instead of using file-open, be lazy and automatically load the file
+            byte[] program = File.ReadAllBytes(@"C:\Users\adam\Documents\My Projects\6502_65C02_functional_tests\bin_files\6502_functional_test.bin");
+            cpu.LoadProgram(0x0000, program);
+            cpu.PC = 0x0400;
+            UpdateScreen();
         }
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
@@ -97,25 +105,25 @@ namespace e6502Debugger
 
             lblFlags.Text = flags;
 
-            //StringBuilder sb = new StringBuilder(100);
-            //lstMemory.Items.Clear();
+            StringBuilder sb = new StringBuilder(100);
+            lstMemory.Items.Clear();
 
-            //for (int pc = 0x0000; pc <= 0xffff; pc += 0x10)
-            //{
-            //    sb.Clear();
-            //    sb.Append("$" + pc.ToString("X4") + ": ");
-            //    for (ii = 0x00; ii <= 0x07; ii++)
-            //    {
-            //        sb.Append(cpu.memory[pc + ii].ToString("X2") + " ");
-            //    }
-            //    sb.Append(" - ");
-            //    for (; ii <= 0x0f; ii++)
-            //    {
-            //        sb.Append(cpu.memory[pc + ii].ToString("X2") + " ");
-            //    }
-            //    sb.AppendLine();
-            //    lstMemory.Items.Add(sb.ToString());
-            //}
+            for (int pc = 0x0000; pc <= 0xffff; pc += 0x10)
+            {
+                //sb.Clear();
+                //sb.Append("$" + pc.ToString("X4") + ": ");
+                //for (ii = 0x00; ii <= 0x07; ii++)
+                //{
+                //    sb.Append(cpu.memory[pc + ii].ToString("X2") + " ");
+                //}
+                //sb.Append(" - ");
+                //for (; ii <= 0x0f; ii++)
+                //{
+                //    sb.Append(cpu.memory[pc + ii].ToString("X2") + " ");
+                //}
+                //sb.AppendLine();
+                //lstMemory.Items.Add(sb.ToString());
+            }
 
             lstPC.Items.Clear();
             lstPC.Items.Add("$" + cpu.PC.ToString("X4") + ": " + cpu.DasmNextInstruction());

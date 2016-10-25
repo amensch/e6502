@@ -27,7 +27,6 @@ namespace e6502CPU
         // Status Registers (in order bit 7 to 0)
         public bool NF;    // negative flag (N)
         public bool VF;    // overflow flag (V)
-        // bit 5 not used
         public bool BF;    // breakpoint flag (B)
         public bool DF;    // binary coded decimal flag (D)
         public bool IF;  // interrupt flag (I)
@@ -295,6 +294,9 @@ namespace e6502CPU
                 case 0x00:
                     PC += _currentOP.Bytes;
 
+                    // set interrupt flag
+                    IF = true;
+
                     // push PC
                     Push(PC);
 
@@ -303,8 +305,8 @@ namespace e6502CPU
 
                     if (NF) sr = sr & 0x80;
                     if (VF) sr = sr & 0x40;
-                    // no bit 5
-                    if (BF) sr = sr & 0x10;
+                    sr = sr & 0x20;
+                    sr = sr & 0x10;
                     if (DF) sr = sr & 0x08;
                     if (IF) sr = sr & 0x04;
                     if (ZF) sr = sr & 0x02;
@@ -312,8 +314,6 @@ namespace e6502CPU
 
                     Push((byte)sr);
 
-                    // set interrupt flag
-                    IF = true;
                     break;
 
                 // BVC - branch on overflow clear
@@ -373,6 +373,7 @@ namespace e6502CPU
                     break;
 
                 // CMP - compare memory with accumulator (NZC)
+                // CMP, CPX and CPY are unsigned comparisions
                 case 0xc5:
                 case 0xc9:
                 case 0xc1:
@@ -381,11 +382,12 @@ namespace e6502CPU
                 case 0xd5:
                 case 0xd9:
                 case 0xdd:
-                    result = A - (byte)oper;
+                    
+                    byte temp = (byte)(A - oper);
 
-                    CF = ((result & 0x100) == 0x100);
-                    ZF = ((result & 0xff) == 0x00);
-                    NF = ((result & 0x80) == 0x80);
+                    CF = A >= (byte)oper;
+                    ZF = A == (byte)oper;
+                    NF = ((temp & 0x80) == 0x80);
 
                     PC += _currentOP.Bytes;
                     break;
@@ -394,11 +396,11 @@ namespace e6502CPU
                 case 0xe0:
                 case 0xe4:
                 case 0xec:
-                    result = X - (byte)oper;
+                    temp = (byte)(X - oper);
 
-                    CF = ((result & 0x100) == 0x100);
-                    ZF = ((result & 0xff) == 0x00);
-                    NF = ((result & 0x80) == 0x80);
+                    CF = X >= (byte)oper;
+                    ZF = X == (byte)oper;
+                    NF = ((temp & 0x80) == 0x80);
 
                     PC += _currentOP.Bytes;
                     break;
@@ -407,11 +409,11 @@ namespace e6502CPU
                 case 0xc0:
                 case 0xc4:
                 case 0xcc:
-                    result = Y + (~(byte)oper + 1);
+                    temp = (byte)(Y - oper);
 
-                    CF = ((result & 0x100) == 0x100);
-                    ZF = ((result & 0xff) == 0x00);
-                    NF = ((result & 0x80) == 0x80);
+                    CF = Y >= (byte)oper;
+                    ZF = Y == (byte)oper;
+                    NF = ((temp & 0x80) == 0x80);
 
                     PC += _currentOP.Bytes;
                     break;
@@ -634,14 +636,14 @@ namespace e6502CPU
                 case 0x08:
                     sr = 0x00;
 
-                    if (NF) sr = sr & 0x80;
-                    if (VF) sr = sr & 0x40;
-                    // no bit 5
-                    if (BF) sr = sr & 0x10;
-                    if (DF) sr = sr & 0x08;
-                    if (IF) sr = sr & 0x04;
-                    if (ZF) sr = sr & 0x02;
-                    if (CF) sr = sr & 0x01;
+                    if (NF) sr = sr | 0x80;
+                    if (VF) sr = sr | 0x40;
+                    sr = sr | 0x20; // bit 5 is always on
+                    sr = sr | 0x10; // bit 4 is always on for PHP
+                    if (DF) sr = sr | 0x08;
+                    if (IF) sr = sr | 0x04;
+                    if (ZF) sr = sr | 0x02;
+                    if (CF) sr = sr | 0x01;
 
                     Push((byte)sr);
                     PC += _currentOP.Bytes;
@@ -651,7 +653,7 @@ namespace e6502CPU
                 case 0x68:
                     A = PopByte();
                     NF = (A & 0x80) == 0x80;
-                    ZF = (A & 0x02) == 0x02;
+                    ZF = (A & 0xff) == 0x00;
                     PC += _currentOP.Bytes;
                     break;
 
@@ -819,6 +821,14 @@ namespace e6502CPU
                     X = A;
                     ZF = ((X & 0xff) == 0x00);
                     NF = ((X & 0x80) == 0x80);
+                    PC += _currentOP.Bytes;
+                    break;
+
+                // TAY - transfer accumulator to Y (NZ)
+                case 0xa8:
+                    Y = A;
+                    ZF = ((Y & 0xff) == 0x00);
+                    NF = ((Y & 0x80) == 0x80);
                     PC += _currentOP.Bytes;
                     break;
 
