@@ -31,7 +31,7 @@ relative      BNE oper      D0    2     2**
 relative      BPL oper      10    2     2**
 implied       BRK           00    1     7
 relative      BVC oper      50    2     2**
-relative      BVC oper      70    2     2**
+relative      BVS oper      70    2     2**
 implied       CLC           18    1     2
 implied       CLD           D8    1     2
 implied       CLI           58    1     2

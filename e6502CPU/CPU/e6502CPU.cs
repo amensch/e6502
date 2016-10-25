@@ -100,6 +100,9 @@ namespace e6502CPU
             _currentOP = _opCodeTable.OpCodes[memory[PC]];
             _extraCycles = 0;
 
+            // for now just turn off the flag
+            //if (IF) IF = false;
+            
             ExecuteInstruction();
 
             return _currentOP.Cycles + _extraCycles;
@@ -292,13 +295,12 @@ namespace e6502CPU
 
                 // BRK - force break (I)
                 case 0x00:
-                    PC += _currentOP.Bytes;
 
                     // set interrupt flag
                     IF = true;
 
-                    // push PC
-                    Push(PC);
+                    // push PC (return address)
+                    Push( (ushort) (PC+2));
 
                     // push SR
                     int sr = 0x00;
@@ -314,6 +316,8 @@ namespace e6502CPU
 
                     Push((byte)sr);
 
+                    // load program counter with the address at 0xfffe
+                    PC = (ushort)(memory[0xffff] << 8 | memory[0xfffe]);
                     break;
 
                 // BVC - branch on overflow clear
@@ -531,8 +535,9 @@ namespace e6502CPU
 
                 // JSR - jump to new location and save return address
                 case 0x20:
-                    PC += _currentOP.Bytes;
-                    Push(PC);
+                    // documentation says push PC+2 even though this is a 3 byte instruction
+                    // When pulled via RTS 1 is added to the result
+                    Push((ushort)(PC+2));  
                     PC = GetImmWord();
                     break;
 
@@ -745,7 +750,7 @@ namespace e6502CPU
 
                 // RTS - return from subroutine
                 case 0x60:
-                    PC = PopWord();
+                    PC = (ushort)(PopWord() + 1);
                     break;
 
                 // SBC - subtract memory from accumulator with borrow (NZCV)
@@ -1065,8 +1070,9 @@ namespace e6502CPU
 
         private void Push(ushort data)
         {
-            memory[(0x0100 | SP)] = (byte)(data & 0xff);
-            memory[(0x0100 | (SP-1))] = (byte)(data >> 8);
+            // HI byte is in a higher address, LO byte is in the lower address
+            memory[(0x0100 | SP)] = (byte)(data >> 8);
+            memory[(0x0100 | (SP-1))] = (byte)(data & 0xff);
             SP -= 2;
         }
 
@@ -1078,10 +1084,10 @@ namespace e6502CPU
         
         private ushort PopWord()
         {
+            // HI byte is in a higher address, LO byte is in the lower address
             SP += 2;
-
             ushort idx = (ushort)(0x0100 | SP);
-            return (ushort)((memory[idx - 1] << 8 | memory[idx]) & 0xffff);
+            return (ushort)((memory[idx] << 8 | memory[idx-1]) & 0xffff);
         }
     }
 }
