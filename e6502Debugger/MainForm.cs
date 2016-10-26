@@ -110,19 +110,19 @@ namespace e6502Debugger
 
             for (int pc = 0x0000; pc <= 0xffff; pc += 0x10)
             {
-                sb.Clear();
-                sb.Append("$" + pc.ToString("X4") + ": ");
-                for (ii = 0x00; ii <= 0x07; ii++)
-                {
-                    sb.Append(cpu.memory[pc + ii].ToString("X2") + " ");
-                }
-                sb.Append(" - ");
-                for (; ii <= 0x0f; ii++)
-                {
-                    sb.Append(cpu.memory[pc + ii].ToString("X2") + " ");
-                }
-                sb.AppendLine();
-                lstMemory.Items.Add(sb.ToString());
+                //sb.Clear();
+                //sb.Append("$" + pc.ToString("X4") + ": ");
+                //for (ii = 0x00; ii <= 0x07; ii++)
+                //{
+                //    sb.Append(cpu.memory[pc + ii].ToString("X2") + " ");
+                //}
+                //sb.Append(" - ");
+                //for (; ii <= 0x0f; ii++)
+                //{
+                //    sb.Append(cpu.memory[pc + ii].ToString("X2") + " ");
+                //}
+                //sb.AppendLine();
+                //lstMemory.Items.Add(sb.ToString());
             }
 
             lstPC.Items.Clear();

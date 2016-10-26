@@ -945,13 +945,16 @@ namespace e6502CPU
                 // The Y register is added *after* the deferencing instead of before.
                 case AddressModes.IndirectY:
 
-                    imm = GetImmByte();
-                    if (_currentOP.CheckPageBoundary)
-                    {
-                        if (imm == 0xff) _extraCycles = 1;
-                    }
-                    oper = memory[imm] + Y;
+                    ushort addr = (ushort)GetWordFromMemory(memory[GetImmByte()]);
+                    addr += Y;
+
+                    //if (_currentOP.CheckPageBoundary)
+                    //{
+                    //    if (addr == 0xff) _extraCycles = 1;
+                    //}
+                    oper = memory[addr];
                     break;
+
 
                 // Relative is used for branching, the immediate value is a
                 // signed 8 bit value and used to offset the current PC.
