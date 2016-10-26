@@ -296,30 +296,38 @@ namespace e6502CPU
                 // BRK - force break (I)
                 case 0x00:
 
-                    // set interrupt flag
-                    IF = true;
+                    // This is a software interrupt (IRQ).  These events happen in a specific order.
 
-                    // push PC (return address)
-                    Push( (ushort) (PC+2));
+                    // Processor adds two to the current PC
+                    PC += 2;
 
-                    // push SR
+                    // Push the MSB of the PC
+                    Push((byte)(PC >> 8));
+
+                    // Push the LSB of the PC
+                    Push((byte)(PC & 0xff));
+
+                    // Push the status register
                     int sr = 0x00;
-
-                    if (NF) sr = sr & 0x80;
-                    if (VF) sr = sr & 0x40;
-                    sr = sr & 0x20;
-                    sr = sr & 0x10;
-                    if (DF) sr = sr & 0x08;
-                    if (IF) sr = sr & 0x04;
-                    if (ZF) sr = sr & 0x02;
-                    if (CF) sr = sr & 0x01;
+                    if (NF) sr = sr | 0x80;
+                    if (VF) sr = sr | 0x40;
+                    sr = sr | 0x20;
+                    sr = sr | 0x10;
+                    if (DF) sr = sr | 0x08;
+                    if (IF) sr = sr | 0x04;
+                    if (ZF) sr = sr | 0x02;
+                    if (CF) sr = sr | 0x01;
 
                     Push((byte)sr);
 
-                    // load program counter with the address at 0xfffe
-                    PC = (ushort)(memory[0xffff] << 8 | memory[0xfffe]);
-                    break;
+                    // set interrupt flag
+                    IF = true;
 
+                    // load program counter with proper interrupt vector
+                    // BRK/IRQ has LSB at $FFFE and MSB at $FFFF
+                    PC = (ushort)(memory[0xffff] << 8 | memory[0xfffe]);
+
+                    break;
                 // BVC - branch on overflow clear
                 case 0x50:
                     PC += _currentOP.Bytes;
@@ -853,11 +861,9 @@ namespace e6502CPU
                     PC += _currentOP.Bytes;
                     break;
 
-                // TXS - transfer X to SP (NZ)
+                // TXS - transfer X to SP (no flags -- some online docs are incorrect)
                 case 0x9a:
                     SP = X;
-                    ZF = ((SP & 0xff) == 0x00);
-                    NF = ((SP & 0x80) == 0x80);
                     PC += _currentOP.Bytes;
                     break;
 
@@ -932,7 +938,7 @@ namespace e6502CPU
                 // immediate word to get the memory location from which to retrieve
                 // the 16 bit operand.  This is a combination of ZeroPage indexed and Indirect.
                 case AddressModes.XIndirect:
-                    oper = GetWordFromMemory((GetImmByte() + X) & 0xff);
+                    oper = memory[GetImmByte() + X] & 0xff;
                     break;
 
                 // The Indirect Indexed works a bit differently than above.
@@ -944,7 +950,7 @@ namespace e6502CPU
                     {
                         if (imm == 0xff) _extraCycles = 1;
                     }
-                    oper = GetWordFromMemory(imm) + Y;
+                    oper = memory[imm] + Y;
                     break;
 
                 // Relative is used for branching, the immediate value is a
