@@ -938,21 +938,33 @@ namespace e6502CPU
                 // immediate word to get the memory location from which to retrieve
                 // the 16 bit operand.  This is a combination of ZeroPage indexed and Indirect.
                 case AddressModes.XIndirect:
-                    oper = memory[GetImmByte() + X] & 0xff;
+
+                    /*
+                     * 1) fetch immediate byte
+                     * 2) add X to the byte
+                     * 3) obtain word from this zero page address
+                     * 4) return the byte located at the address specified by the word
+                     */
+
+                    oper = memory[GetWordFromMemory(GetImmByte() + X)];
                     break;
 
                 // The Indirect Indexed works a bit differently than above.
                 // The Y register is added *after* the deferencing instead of before.
                 case AddressModes.IndirectY:
 
-                    ushort addr = (ushort)GetWordFromMemory(memory[GetImmByte()]);
-                    addr += Y;
+                    /*
+                        1) Fetch the address (word) at the immediate zero page location
+                        2) Add Y to obtain the final target address
+                        3)Load the byte at this address
+                    */
+
+                    oper = memory[GetWordFromMemory(GetImmByte()) + Y];
 
                     //if (_currentOP.CheckPageBoundary)
                     //{
                     //    if (addr == 0xff) _extraCycles = 1;
                     //}
-                    oper = memory[addr];
                     break;
 
 
@@ -1019,12 +1031,14 @@ namespace e6502CPU
                 // immediate word to get the memory location from which to retrieve
                 // the 16 bit operand.  This is a combination of ZeroPage indexed and Indirect.
                 case AddressModes.XIndirect:
-                    throw new InvalidOperationException("Address mode " + mode.ToString() + " is not valid for this operation");
+                    memory[GetWordFromMemory(GetImmByte() + X)] = (byte)data;
+                    break;
 
                 // The Indirect Indexed works a bit differently than above.
                 // The Y register is added *after* the deferencing instead of before.
                 case AddressModes.IndirectY:
-                    throw new InvalidOperationException("Address mode " + mode.ToString() + " is not valid for this operation");
+                    memory[GetWordFromMemory(GetImmByte()) + Y] = (byte)data;
+                    break;
 
                 // Relative is used for branching, the immediate value is a
                 // signed 8 bit value and used to offset the current PC.

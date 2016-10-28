@@ -37,8 +37,8 @@ namespace e6502Debugger
 
             // instead of using file-open, be lazy and automatically load the file
 
-            //byte[] program = File.ReadAllBytes(@"C:\Users\adam\Documents\My Projects\6502_65C02_functional_tests\bin_files\6502_functional_test.bin");
-            byte[] program = File.ReadAllBytes(@"C:\Users\menschas\Source\6502_65C02_functional_tests\bin_files\6502_functional_test.bin");
+            byte[] program = File.ReadAllBytes(@"C:\Users\adam\Documents\My Projects\6502_65C02_functional_tests\bin_files\6502_functional_test.bin");
+            //byte[] program = File.ReadAllBytes(@"C:\Users\menschas\Source\6502_65C02_functional_tests\bin_files\6502_functional_test.bin");
             cpu.LoadProgram(0x0000, program);
             cpu.PC = 0x0400;
             UpdateScreen();
