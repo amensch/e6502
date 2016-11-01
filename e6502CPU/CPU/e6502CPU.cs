@@ -43,7 +43,7 @@ namespace e6502CPU
         private OpCodeRecord _currentOP;
 
         // The current operand (for debugging)
-        private int _operand;
+        public int Operand { get; private set; }
 
         // Clock cycles to add due to page boundaries being crossed
         private int _extraCycles;
@@ -111,7 +111,7 @@ namespace e6502CPU
         private void ExecuteInstruction()
         {
             // Get operand (if applicable)
-            _operand = GetOperand(_currentOP.AddressMode);
+            Operand = GetOperand(_currentOP.AddressMode);
 
             // Temporarily store results so flag calculations can be made
             int result;

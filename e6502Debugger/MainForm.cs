@@ -37,8 +37,19 @@ namespace e6502Debugger
 
             // instead of using file-open, be lazy and automatically load the file
 
-            byte[] program = File.ReadAllBytes(@"C:\Users\adam\Documents\My Projects\6502_65C02_functional_tests\bin_files\6502_functional_test.bin");
-            //byte[] program = File.ReadAllBytes(@"C:\Users\menschas\Source\6502_65C02_functional_tests\bin_files\6502_functional_test.bin");
+            // $17c2 -> $17d2 -> stuck on $17dc
+            byte[] program;
+
+            if( System.Environment.MachineName.StartsWith("US") )
+            {
+                program = File.ReadAllBytes(@"C:\Users\menschas\Source\6502_65C02_functional_tests\bin_files\6502_functional_test.bin");
+            }
+            else
+            {
+                program = File.ReadAllBytes(@"C:\Users\adam\Documents\My Projects\6502_65C02_functional_tests\bin_files\6502_functional_test.bin");
+            }
+
+
             cpu.LoadProgram(0x0000, program);
             cpu.PC = 0x0400;
             UpdateScreen();
@@ -63,8 +74,6 @@ namespace e6502Debugger
 
         private void UpdateScreen()
         {
-            int ii;
-
             lblA.Text = cpu.A.ToString("X2");
             lblX.Text = cpu.X.ToString("X2");
             lblY.Text = cpu.Y.ToString("X2");
@@ -105,54 +114,26 @@ namespace e6502Debugger
 
             lblFlags.Text = flags;
 
-            StringBuilder sb = new StringBuilder(100);
-            lstMemory.Items.Clear();
-
-            for (int pc = 0x0000; pc <= 0xffff; pc += 0x10)
-            {
-                //sb.Clear();
-                //sb.Append("$" + pc.ToString("X4") + ": ");
-                //for (ii = 0x00; ii <= 0x07; ii++)
-                //{
-                //    sb.Append(cpu.memory[pc + ii].ToString("X2") + " ");
-                //}
-                //sb.Append(" - ");
-                //for (; ii <= 0x0f; ii++)
-                //{
-                //    sb.Append(cpu.memory[pc + ii].ToString("X2") + " ");
-                //}
-                //sb.AppendLine();
-                //lstMemory.Items.Add(sb.ToString());
-            }
-
             lstPC.Items.Clear();
             lstPC.Items.Add("$" + cpu.PC.ToString("X4") + ": " + cpu.DasmNextInstruction());
 
-
-        }
-
-
-        private void label3_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void label4_Click(object sender, EventArgs e)
-        {
+            UpdateMemoryWindow();
 
         }
 
         private void btnStep_Click(object sender, EventArgs e)
         {
             ushort bp;
+            ushort prev_pc;
             if (txtBreakPoint.Text.Length == 4)
             {
                 if (ushort.TryParse(txtBreakPoint.Text, System.Globalization.NumberStyles.AllowHexSpecifier, null, out bp))
                 {
                     do
                     {
+                        prev_pc = cpu.PC;
                         cpu.ExecuteNext();
-                    } while (cpu.PC != bp);
+                    } while ( (cpu.PC != bp) && ( prev_pc != cpu.PC ));
                 }
                 else
                 {
@@ -166,9 +147,30 @@ namespace e6502Debugger
             UpdateScreen();
         }
 
-        private void txtBreakPoint_TextChanged(object sender, EventArgs e)
+        private void UpdateMemoryWindow()
         {
-
+            int ii;
+            lstMemory.Items.Clear();
+            if (chkShowMemory.Checked)
+            {
+                StringBuilder sb = new StringBuilder(100);
+                for (int pc = 0x0000; pc <= 0xffff; pc += 0x10)
+                {
+                    sb.Clear();
+                    sb.Append("$" + pc.ToString("X4") + ": ");
+                    for (ii = 0x00; ii <= 0x07; ii++)
+                    {
+                        sb.Append(cpu.memory[pc + ii].ToString("X2") + " ");
+                    }
+                    sb.Append(" - ");
+                    for (; ii <= 0x0f; ii++)
+                    {
+                        sb.Append(cpu.memory[pc + ii].ToString("X2") + " ");
+                    }
+                    sb.AppendLine();
+                    lstMemory.Items.Add(sb.ToString());
+                }
+            }
         }
 
         private void MainForm_KeyDown(object sender, KeyEventArgs e)
@@ -177,6 +179,11 @@ namespace e6502Debugger
             {
                 btnStep.PerformClick();
             }
+        }
+
+        private void chkShowMemory_CheckedChanged(object sender, EventArgs e)
+        {
+            UpdateMemoryWindow();
         }
     }
 }
