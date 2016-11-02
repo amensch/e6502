@@ -33,14 +33,19 @@ namespace e6502Debugger
             lstPC.Items.Clear();
             txtBreakPoint.Text = "";
 
+            LoadTestProgram();
+        }
+
+        private void LoadTestProgram()
+        {
             cpu = new e6502();
 
             // instead of using file-open, be lazy and automatically load the file
 
-            // $17c2 -> $17d2 -> stuck on $17dc
+            // stuck: $2299
             byte[] program;
 
-            if( System.Environment.MachineName.StartsWith("US") )
+            if (System.Environment.MachineName.StartsWith("US"))
             {
                 program = File.ReadAllBytes(@"C:\Users\menschas\Source\6502_65C02_functional_tests\bin_files\6502_functional_test.bin");
             }
@@ -48,8 +53,6 @@ namespace e6502Debugger
             {
                 program = File.ReadAllBytes(@"C:\Users\adam\Documents\My Projects\6502_65C02_functional_tests\bin_files\6502_functional_test.bin");
             }
-
-
             cpu.LoadProgram(0x0000, program);
             cpu.PC = 0x0400;
             UpdateScreen();
@@ -192,6 +195,12 @@ namespace e6502Debugger
             {
                 btnStep.PerformClick();
             }
+        }
+
+        private void btnRestart_Click(object sender, EventArgs e)
+        {
+            LoadTestProgram();
+            lblHalted.Visible = false;
         }
     }
 }

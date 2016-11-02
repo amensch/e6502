@@ -54,6 +54,7 @@
             this.label6 = new System.Windows.Forms.Label();
             this.txtBreakPoint = new System.Windows.Forms.TextBox();
             this.lblHalted = new System.Windows.Forms.Label();
+            this.btnRestart = new System.Windows.Forms.Button();
             this.MainMenu.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
@@ -385,11 +386,22 @@
             this.lblHalted.Text = "HALTED";
             this.lblHalted.Visible = false;
             // 
+            // btnRestart
+            // 
+            this.btnRestart.Location = new System.Drawing.Point(502, 584);
+            this.btnRestart.Name = "btnRestart";
+            this.btnRestart.Size = new System.Drawing.Size(95, 33);
+            this.btnRestart.TabIndex = 19;
+            this.btnRestart.Text = "Restart";
+            this.btnRestart.UseVisualStyleBackColor = true;
+            this.btnRestart.Click += new System.EventHandler(this.btnRestart_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(746, 629);
+            this.Controls.Add(this.btnRestart);
             this.Controls.Add(this.lblHalted);
             this.Controls.Add(this.txtBreakPoint);
             this.Controls.Add(this.label6);
@@ -444,5 +456,6 @@
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.TextBox txtBreakPoint;
         private System.Windows.Forms.Label lblHalted;
+        private System.Windows.Forms.Button btnRestart;
     }
 }

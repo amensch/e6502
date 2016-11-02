@@ -946,7 +946,7 @@ namespace e6502CPU
                      * 4) return the byte located at the address specified by the word
                      */
 
-                    oper = memory[GetWordFromMemory(GetImmByte() + X)];
+                    oper = memory[GetWordFromMemory( (byte)(GetImmByte() + X))];
                     break;
 
                 // The Indirect Indexed works a bit differently than above.
@@ -1031,7 +1031,7 @@ namespace e6502CPU
                 // immediate word to get the memory location from which to retrieve
                 // the 16 bit operand.  This is a combination of ZeroPage indexed and Indirect.
                 case AddressModes.XIndirect:
-                    memory[GetWordFromMemory(GetImmByte() + X)] = (byte)data;
+                    memory[GetWordFromMemory((byte)(GetImmByte() + X))] = (byte)data;
                     break;
 
                 // The Indirect Indexed works a bit differently than above.
@@ -1062,9 +1062,9 @@ namespace e6502CPU
             }
         }
 
-        private int GetWordFromMemory(int address)
+        private ushort GetWordFromMemory(int address)
         {
-            return (memory[address + 1] << 8 | memory[address]) & 0xffff;
+            return (ushort)((memory[address + 1] << 8 | memory[address]) & 0xffff);
         }
 
         private ushort GetImmWord()
