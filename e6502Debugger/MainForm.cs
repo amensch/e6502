@@ -41,17 +41,19 @@ namespace e6502Debugger
             cpu = new e6502();
 
             // instead of using file-open, be lazy and automatically load the file
+            
+            // Stuck on $339F -- need to implement BCD
+            // Getting to $3399 indicates a successful test!
 
-            // stuck: $3509
             byte[] program;
 
             if (System.Environment.MachineName.StartsWith("US"))
             {
-                program = File.ReadAllBytes(@"C:\Users\menschas\Source\6502_65C02_functional_tests\bin_files\6502_functional_test.bin");
+                program = File.ReadAllBytes(@"C:\Users\menschas\Source\6502_65C02_functional_tests\bin_files\65C02_extended_opcodes_test.bin");
             }
             else
             {
-                program = File.ReadAllBytes(@"C:\Users\adam\Documents\My Projects\6502_65C02_functional_tests\bin_files\6502_functional_test.bin");
+                program = File.ReadAllBytes(@"C:\Users\adam\Documents\My Projects\6502_65C02_functional_tests\bin_files\65C02_extended_opcodes_test.bin");
             }
             cpu.LoadProgram(0x0000, program);
             cpu.PC = 0x0400;

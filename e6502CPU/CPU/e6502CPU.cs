@@ -129,30 +129,30 @@ namespace e6502CPU
                 case 0x75:
                 case 0x79:
                 case 0x7d:
-                    result = A + oper;
-                    if (CF) result++;
 
-                    CF = ((result & 0x100) == 0x100);
-                    ZF = ((result & 0xff) == 0x00);
-                    NF = ((result & 0x80) == 0x80);
+                    if (DF)
+                    {
+                        result = HexToBCD(A) + HexToBCD((byte)oper);
+                        if (CF) result++;
 
-                    byte byte_result = (byte)result;
-                    //VF = ((result ^ A) & (result ^ oper) & 0x80) == 0x80;
-                    // overflow occurs when two positives = negative or two negatives = positive
-                    if(( A <= 0x7f && oper <= 0x7f ) && (byte_result > 0x7f))
-                    {
-                        VF = true;
-                    }
-                    else if ((A > 0x7f && oper > 0x7f) && (byte_result < 0x7f))
-                    {
-                        VF = true;
+                        ZF = (result == 0);
+                        CF = (result > 99);
+                        NF = (result & 0x80) == 0x80;
+
+                        //NOTE: V flag has no special meaning in decimal mode
+
+                        if (result > 99 )
+                        {
+                            result -= 100;
+                        }
+
+                        // convert decimal result to hex BCD result
+                        A = BCDToHex(result);
                     }
                     else
                     {
-                        VF = false;
+                        ADC((byte)oper);
                     }
-
-                    A = (byte)result;
                     PC += _currentOP.Bytes;
                     break;
 
@@ -788,29 +788,29 @@ namespace e6502CPU
                 case 0xf5:
                 case 0xf9:
                 case 0xfd:
-                    result = A - oper;
-                    if (!CF) result--;
 
-                    CF = ((result & 0x100) == 0x100);
-                    ZF = ((result & 0xff) == 0x00);
-                    NF = ((result & 0x80) == 0x80);
-                    byte_result = (byte)result;
-                    //VF = ((result & 0xff00) > 0);
-                    // overflow occurs when two positives = negative or two negatives = positive
-                    if ((A <= 0x7f && oper <= 0x7f) && (byte_result > 0x7f))
+                    if (DF)
                     {
-                        VF = true;
-                    }
-                    else if ((A > 0x7f && oper > 0x7f) && (byte_result < 0x7f))
-                    {
-                        VF = true;
+                        result = HexToBCD(A) - HexToBCD((byte)oper);
+                        if (!CF) result--;
+
+                        ZF = (result == 0);
+                        CF = (result >= 0);
+                        NF = (result & 0x80) == 0x80;
+
+                        //NOTE: V flag has no special meaning in decimal mode
+
+                        // BCD numbers wrap around when subtraction is negative
+                        if (result < 0)
+                            result += 100;
+                        A = BCDToHex(result);
                     }
                     else
                     {
-                        VF = false;
+                        ADC((byte)~oper);
                     }
-                    A = (byte)result;
                     PC += _currentOP.Bytes;
+
                     break;
 
                 // SEC - set carry flag
@@ -1141,6 +1141,44 @@ namespace e6502CPU
             SP += 2;
             ushort idx = (ushort)(0x0100 | SP);
             return (ushort)((memory[idx] << 8 | memory[idx-1]) & 0xffff);
+        }
+
+        private void ADC(byte oper)
+        {
+            ushort answer = (ushort)(A + oper);
+            if (CF) answer++;
+
+            CF = (answer > 0xff);
+            ZF = ((answer & 0xff) == 0x00);
+            NF = (answer & 0x80) == 0x80;
+
+            //ushort temp = (ushort)(~(A ^ oper) & (A ^ answer) & 0x80);
+            VF = (~(A ^ oper) & (A ^ answer) & 0x80) != 0x00;
+
+            A = (byte)answer;
+        }
+
+        private int HexToBCD(byte oper)
+        {
+            // validate input is valid packed BCD 
+            if (oper > 0x99)
+                throw new InvalidOperationException("Invalid BCD number: " + oper.ToString("X2"));
+            if ((oper & 0x0f) > 0x09)
+                throw new InvalidOperationException("Invalid BCD number: " + oper.ToString("X2"));
+
+            return ((oper >> 4) * 10) + (oper & 0x0f);
+        }
+
+        private byte BCDToHex(int result)
+        {
+            if (result > 0xff)
+                throw new InvalidOperationException("Invalid BCD to hex number: " + result.ToString());
+
+            if (result <= 9)
+                return (byte)result;
+            else
+                return (byte)(((result / 10) << 4) + (result % 10));
+
         }
     }
 }
