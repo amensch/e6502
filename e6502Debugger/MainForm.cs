@@ -125,6 +125,7 @@ namespace e6502Debugger
         {
             ushort bp;
             ushort prev_pc;
+            lblHalted.Visible = false;
             if (txtBreakPoint.Text.Length == 4)
             {
                 if (ushort.TryParse(txtBreakPoint.Text, System.Globalization.NumberStyles.AllowHexSpecifier, null, out bp))
@@ -134,6 +135,8 @@ namespace e6502Debugger
                         prev_pc = cpu.PC;
                         cpu.ExecuteNext();
                     } while ( (cpu.PC != bp) && ( prev_pc != cpu.PC ));
+                    if (prev_pc == cpu.PC)
+                        lblHalted.Visible = true;
                 }
                 else
                 {
@@ -150,27 +153,37 @@ namespace e6502Debugger
         private void UpdateMemoryWindow()
         {
             int ii;
-            lstMemory.Items.Clear();
-            if (chkShowMemory.Checked)
+            int idx = 0;
+            bool emptyList = lstMemory.Items.Count == 0;
+            int topIndex = 0;
+
+            if(lstMemory.Items.Count > 0)
             {
-                StringBuilder sb = new StringBuilder(100);
-                for (int pc = 0x0000; pc <= 0xffff; pc += 0x10)
-                {
-                    sb.Clear();
-                    sb.Append("$" + pc.ToString("X4") + ": ");
-                    for (ii = 0x00; ii <= 0x07; ii++)
-                    {
-                        sb.Append(cpu.memory[pc + ii].ToString("X2") + " ");
-                    }
-                    sb.Append(" - ");
-                    for (; ii <= 0x0f; ii++)
-                    {
-                        sb.Append(cpu.memory[pc + ii].ToString("X2") + " ");
-                    }
-                    sb.AppendLine();
-                    lstMemory.Items.Add(sb.ToString());
-                }
+                topIndex = lstMemory.TopIndex;
             }
+
+            StringBuilder sb = new StringBuilder(100);
+            for (int pc = 0x0000; pc <= 0xffff; pc += 0x10)
+            {
+                sb.Clear();
+                sb.Append("$" + pc.ToString("X4") + ": ");
+                for (ii = 0x00; ii <= 0x07; ii++)
+                {
+                    sb.Append(cpu.memory[pc + ii].ToString("X2") + " ");
+                }
+                sb.Append(" - ");
+                for (; ii <= 0x0f; ii++)
+                {
+                    sb.Append(cpu.memory[pc + ii].ToString("X2") + " ");
+                }
+                sb.AppendLine();
+                if (emptyList)
+                    lstMemory.Items.Add(sb.ToString());
+                else
+                    lstMemory.Items[idx] = sb.ToString();
+                idx++;
+            }
+            lstMemory.TopIndex = topIndex;
         }
 
         private void MainForm_KeyDown(object sender, KeyEventArgs e)
@@ -179,11 +192,6 @@ namespace e6502Debugger
             {
                 btnStep.PerformClick();
             }
-        }
-
-        private void chkShowMemory_CheckedChanged(object sender, EventArgs e)
-        {
-            UpdateMemoryWindow();
         }
     }
 }

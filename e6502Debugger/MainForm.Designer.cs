@@ -53,7 +53,7 @@
             this.btnStep = new System.Windows.Forms.Button();
             this.label6 = new System.Windows.Forms.Label();
             this.txtBreakPoint = new System.Windows.Forms.TextBox();
-            this.chkShowMemory = new System.Windows.Forms.CheckBox();
+            this.lblHalted = new System.Windows.Forms.Label();
             this.MainMenu.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
@@ -373,24 +373,24 @@
             this.txtBreakPoint.TabIndex = 17;
             this.txtBreakPoint.Text = "0000";
             // 
-            // chkShowMemory
+            // lblHalted
             // 
-            this.chkShowMemory.AutoSize = true;
-            this.chkShowMemory.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.chkShowMemory.Location = new System.Drawing.Point(237, 583);
-            this.chkShowMemory.Name = "chkShowMemory";
-            this.chkShowMemory.Size = new System.Drawing.Size(109, 20);
-            this.chkShowMemory.TabIndex = 18;
-            this.chkShowMemory.Text = "Show Memory";
-            this.chkShowMemory.UseVisualStyleBackColor = true;
-            this.chkShowMemory.CheckedChanged += new System.EventHandler(this.chkShowMemory_CheckedChanged);
+            this.lblHalted.AutoSize = true;
+            this.lblHalted.Font = new System.Drawing.Font("Tahoma", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblHalted.ForeColor = System.Drawing.Color.Red;
+            this.lblHalted.Location = new System.Drawing.Point(192, 585);
+            this.lblHalted.Name = "lblHalted";
+            this.lblHalted.Size = new System.Drawing.Size(75, 19);
+            this.lblHalted.TabIndex = 18;
+            this.lblHalted.Text = "HALTED";
+            this.lblHalted.Visible = false;
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(746, 629);
-            this.Controls.Add(this.chkShowMemory);
+            this.Controls.Add(this.lblHalted);
             this.Controls.Add(this.txtBreakPoint);
             this.Controls.Add(this.label6);
             this.Controls.Add(this.btnStep);
@@ -443,6 +443,6 @@
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.Label label6;
         private System.Windows.Forms.TextBox txtBreakPoint;
-        private System.Windows.Forms.CheckBox chkShowMemory;
+        private System.Windows.Forms.Label lblHalted;
     }
 }
