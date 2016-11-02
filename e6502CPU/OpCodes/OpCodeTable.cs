@@ -122,6 +122,9 @@ namespace e6502CPU
                         case "zeropage,Y":
                             rec_mode = AddressModes.ZeroPageY;
                             break;
+                        case "zeropage,0":
+                            rec_mode = AddressModes.ZeroPage0;
+                            break;
                         default:
                             throw new InvalidDataException("Line + [" + line + "] (addressing) has invalid data");
 

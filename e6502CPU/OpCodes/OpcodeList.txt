@@ -8,6 +8,7 @@ absolute,X    ADC oper,X    7D    3     4*
 absolute,Y    ADC oper,Y    79    3     4*
 (indirect,X)  ADC (oper,X)  61    2     6
 (indirect),Y  ADC (oper),Y  71    2     5*
+zeropage,0    ADC (oper)    72    2     5
 immediate     AND #oper     29    2     2
 zeropage      AND oper      25    2     3
 zeropage,X    AND oper,X    35    2     4
@@ -16,6 +17,7 @@ absolute,X    AND oper,X    3D    3     4*
 absolute,Y    AND oper,Y    39    3     4*
 (indirect,X)  AND (oper,X)  21    2     6
 (indirect),Y  AND (oper),Y  31    2     5*
+zeropage,0    AND (oper)    32    2     5
 accumulator   ASL A         0A    1     2
 zeropage      ASL oper      06    2     5
 zeropage,X    ASL oper,X    16    2     6
@@ -26,6 +28,9 @@ relative      BCS oper      B0    2     2**
 relative      BEQ oper      F0    2     2**
 zeropage      BIT oper      24    2     3
 absolute      BIT oper      2C    3     4
+immediate     BIT #oper     89    2     2
+zeropage,X    BIT oper,X    34    2     4
+absolute,X    BIT oper,X    3C    3     4
 relative      BMI oper      30    2     2**
 relative      BNE oper      D0    2     2**
 relative      BPL oper      10    2     2**
@@ -44,6 +49,7 @@ absolute,X    CMP oper,X    DD    3     4*
 absolute,Y    CMP oper,Y    D9    3     4*
 (indirect,X)  CMP (oper,X)  C1    2     6
 (indirect),Y  CMP (oper),Y  D1    2     5*
+zeropage,0    CMP (oper)    D2    2     5
 immediate     CPX #oper     E0    2     2
 zeropage      CPX oper      E4    2     3
 absolute      CPX oper      EC    3     4
@@ -54,6 +60,7 @@ zeropage      DEC oper      C6    2     5
 zeropage,X    DEC oper,X    D6    2     6
 absolute      DEC oper      CE    3     3
 absolute,X    DEC oper,X    DE    3     7
+accumulator   DEC A         3A    1     2
 implied       DEX           CA    1     2
 implied       DEY           88    1     2
 immediate     EOR #oper     49    2     2
@@ -64,10 +71,12 @@ absolute,X    EOR oper,X    5D    3     4*
 absolute,Y    EOR oper,Y    59    3     4*
 (indirect,X)  EOR (oper,X)  41    2     6
 (indirect),Y  EOR (oper),Y  51    2     5*
+zeropage,0    EOR (oper)    52    2     5
 zeropage      INC oper      E6    2     5
 zeropage,X    INC oper,X    F6    2     6
 absolute      INC oper      EE    3     6
 absolute,X    INC oper,X    FE    3     7
+accumulator   INC A         1A    1     2
 implied       INX           E8    1     2
 implied       INY           C8    1     2
 absolute      JMP oper      4C    3     3
@@ -81,6 +90,7 @@ absolute,X    LDA oper,X    BD    3     4*
 absolute,Y    LDA oper,Y    B9    3     4*
 (indirect,X)  LDA (oper,X)  A1    2     6
 (indirect),Y  LDA (oper),Y  B1    2     5*
+zeropage,0    LDA (oper)    B2    2     5
 immediate     LDX #oper     A2    2     2
 zeropage      LDX oper      A6    2     3
 zeropage,Y    LDX oper,Y    B6    2     4
@@ -105,6 +115,7 @@ absolute,X    ORA oper,X    1D    3     4*
 absolute,Y    ORA oper,Y    19    3     4*
 (indirect,X)  ORA (oper,X)  01    2     6
 (indirect),Y  ORA (oper),Y  11    2     5*
+zeropage,0    ORA (oper)    12    2     5
 implied       PHA           48    1     3
 implied       PHP           08    1     3
 implied       PLA           68    1     4
@@ -129,6 +140,7 @@ absolute,X    SBC oper,X    FD    3     4*
 absolute,Y    SBC oper,Y    F9    3     4*
 (indirect,X)  SBC (oper,X)  E1    2     6
 (indirect),Y  SBC (oper),Y  F1    2     5*
+zeropage,0    SBC (oper)    F2    2     5
 implied       SEC           38    1     2
 implied       SED           F8    1     2
 implied       SEI           78    1     2
@@ -139,6 +151,7 @@ absolute,X    STA oper,X    9D    3     5
 absolute,Y    STA oper,Y    99    3     5
 (indirect,X)  STA (oper,X)  81    2     6
 (indirect),Y  STA (oper),Y  91    2     6
+zeropage,0    STA (oper)    92    2     5
 zeropage      STX oper      86    2     3
 zeropage,Y    STX oper,Y    96    2     4
 absolute      STX oper      8E    3     4

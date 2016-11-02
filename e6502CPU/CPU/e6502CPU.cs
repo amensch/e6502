@@ -126,6 +126,7 @@ namespace e6502CPU
                 case 0x69:
                 case 0x6d:
                 case 0x71:
+                case 0x72:
                 case 0x75:
                 case 0x79:
                 case 0x7d:
@@ -163,6 +164,7 @@ namespace e6502CPU
                 case 0x29:
                 case 0x2d:
                 case 0x31:
+                case 0x32:
                 case 0x35:
                 case 0x39:
                 case 0x3d:
@@ -251,6 +253,10 @@ namespace e6502CPU
                 // the zero flag is set to the result of oper AND accumulator
                 case 0x24:
                 case 0x2c:
+                // added by 65C02
+                case 0x34:
+                case 0x3c:
+                case 0x89:
                     result = A & oper;
 
                     NF = ((oper & 0x80) == 0x80);
@@ -406,6 +412,7 @@ namespace e6502CPU
                 case 0xc1:
                 case 0xcd:
                 case 0xd1:
+                case 0xd2:
                 case 0xd5:
                 case 0xd9:
                 case 0xdd:
@@ -450,6 +457,8 @@ namespace e6502CPU
                 case 0xce:
                 case 0xd6:
                 case 0xde:
+                // added by 65C02
+                case 0x3a:
                     result = oper - 1;
 
                     ZF = ((result & 0xff) == 0x00);
@@ -488,6 +497,7 @@ namespace e6502CPU
                 case 0x49:
                 case 0x4d:
                 case 0x51:
+                case 0x52:
                 case 0x55:
                 case 0x59:
                 case 0x5d:
@@ -506,6 +516,8 @@ namespace e6502CPU
                 case 0xee:
                 case 0xf6:
                 case 0xfe:
+                // added by 65C02
+                case 0x1a:
                     result = oper + 1;
 
                     ZF = ((result & 0xff) == 0x00);
@@ -570,6 +582,7 @@ namespace e6502CPU
                 case 0xa9:
                 case 0xad:
                 case 0xb1:
+                case 0xb2:
                 case 0xb5:
                 case 0xb9:
                 case 0xbd:
@@ -643,6 +656,7 @@ namespace e6502CPU
                 case 0x09:
                 case 0x0d:
                 case 0x11:
+                case 0x12:
                 case 0x15:
                 case 0x19:
                 case 0x1d:
@@ -785,6 +799,7 @@ namespace e6502CPU
                 case 0xe9:
                 case 0xed:
                 case 0xf1:
+                case 0xf2:
                 case 0xf5:
                 case 0xf9:
                 case 0xfd:
@@ -836,6 +851,7 @@ namespace e6502CPU
                 case 0x85:
                 case 0x8d:
                 case 0x91:
+                case 0x92:
                 case 0x95:
                 case 0x99:
                 case 0x9d:
@@ -1015,6 +1031,11 @@ namespace e6502CPU
                     break;
                 case AddressModes.ZeroPageY:
                     oper = memory[(GetImmByte() + Y) & 0xff];
+                    break;
+
+                // this mode is from the 65C02 extended set
+                case AddressModes.ZeroPage0:
+                    oper = memory[(GetImmByte()) & 0xff];
                     break;
                 default:
                     break;
