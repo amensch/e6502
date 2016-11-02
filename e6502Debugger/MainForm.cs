@@ -42,7 +42,7 @@ namespace e6502Debugger
 
             // instead of using file-open, be lazy and automatically load the file
 
-            // stuck: $2299
+            // stuck: $22b3
             byte[] program;
 
             if (System.Environment.MachineName.StartsWith("US"))

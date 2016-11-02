@@ -604,7 +604,7 @@ namespace e6502CPU
                 case 0x5e:
 
                     // shift bit 0 into carry
-                    CF = (oper >= 0x01);
+                    CF = ((oper & 0x01) == 0x01);
 
                     // shift operand
                     result = oper >> 1;
