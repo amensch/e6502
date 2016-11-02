@@ -135,7 +135,22 @@ namespace e6502CPU
                     CF = ((result & 0x100) == 0x100);
                     ZF = ((result & 0xff) == 0x00);
                     NF = ((result & 0x80) == 0x80);
-                    VF = ((result ^ A) & (result ^ oper) & 0x80) == 0x80;
+
+                    byte byte_result = (byte)result;
+                    //VF = ((result ^ A) & (result ^ oper) & 0x80) == 0x80;
+                    // overflow occurs when two positives = negative or two negatives = positive
+                    if(( A <= 0x7f && oper <= 0x7f ) && (byte_result > 0x7f))
+                    {
+                        VF = true;
+                    }
+                    else if ((A > 0x7f && oper > 0x7f) && (byte_result < 0x7f))
+                    {
+                        VF = true;
+                    }
+                    else
+                    {
+                        VF = false;
+                    }
 
                     A = (byte)result;
                     PC += _currentOP.Bytes;
@@ -595,7 +610,7 @@ namespace e6502CPU
                     break;
 
 
-                // LSR - shift right one bit (ZC)
+                // LSR - shift right one bit (NZC)
                 // 0 -> (76543210) -> C
                 case 0x46:
                 case 0x4a:
@@ -610,6 +625,8 @@ namespace e6502CPU
                     result = oper >> 1;
 
                     ZF = ((result & 0xff) == 0x00);
+                    NF = ((result & 0x80) == 0x80);
+
                     SaveOperand(_currentOP.AddressMode, result);
 
                     PC += _currentOP.Bytes;
@@ -777,8 +794,21 @@ namespace e6502CPU
                     CF = ((result & 0x100) == 0x100);
                     ZF = ((result & 0xff) == 0x00);
                     NF = ((result & 0x80) == 0x80);
-                    VF = ((result ^ A) & (result ^ oper) & 0x80) == 0x80;
-
+                    byte_result = (byte)result;
+                    //VF = ((result & 0xff00) > 0);
+                    // overflow occurs when two positives = negative or two negatives = positive
+                    if ((A <= 0x7f && oper <= 0x7f) && (byte_result > 0x7f))
+                    {
+                        VF = true;
+                    }
+                    else if ((A > 0x7f && oper > 0x7f) && (byte_result < 0x7f))
+                    {
+                        VF = true;
+                    }
+                    else
+                    {
+                        VF = false;
+                    }
                     A = (byte)result;
                     PC += _currentOP.Bytes;
                     break;
