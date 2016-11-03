@@ -236,6 +236,7 @@ absolute,Y    STA oper,Y    99    3     5
 (indirect,X)  STA (oper,X)  81    2     6
 (indirect),Y  STA (oper),Y  91    2     6
 zeropage,0    STA (oper)    92    2     5
+implied       STP           DB    1     3
 zeropage      STX oper      86    2     3
 zeropage,Y    STX oper,Y    96    2     4
 absolute      STX oper      8E    3     4
@@ -256,6 +257,8 @@ implied       TSX           BA    1     2
 implied       TXA           8A    1     2
 implied       TXS           9A    1     2
 implied       TYA           98    1     2
+implied       WAI           CB    1     3
+
 
 
 
