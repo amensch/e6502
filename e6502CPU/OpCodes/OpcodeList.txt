@@ -164,6 +164,10 @@ absolute      STX oper      8E    3     4
 zeropage      STY oper      84    2     3
 zeropage,X    STY oper,X    94    2     4
 absolute      STY oper      8C    3     4
+zeropage      STZ oper      64    2     3
+zeropage,X    STZ oper,X    74    2     4
+absolute      STZ oper      9C    3     4
+absolute,X    STZ oper,X    9E    3     5
 implied       TAX           AA    1     2
 implied       TAY           A8    1     2
 implied       TSX           BA    1     2

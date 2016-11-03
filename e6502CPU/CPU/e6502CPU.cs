@@ -316,6 +316,7 @@ namespace e6502CPU
 
                 // BRA - unconditional branch to immediate address
                 case 0x80:
+                    PC += _currentOP.Bytes;
                     PC += (ushort)oper;
                     break;
 
@@ -913,6 +914,15 @@ namespace e6502CPU
                 case 0x8c:
                 case 0x94:
                     SaveOperand(_currentOP.AddressMode, Y);
+                    PC += _currentOP.Bytes;
+                    break;
+
+                // STZ - Store zero
+                case 0x64:
+                case 0x74:
+                case 0x9c:
+                case 0x9e:
+                    SaveOperand(_currentOP.AddressMode, 0);
                     PC += _currentOP.Bytes;
                     break;
 
