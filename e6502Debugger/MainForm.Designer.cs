@@ -55,6 +55,7 @@
             this.txtBreakPoint = new System.Windows.Forms.TextBox();
             this.lblHalted = new System.Windows.Forms.Label();
             this.btnRestart = new System.Windows.Forms.Button();
+            this.btnRun = new System.Windows.Forms.Button();
             this.MainMenu.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
@@ -352,7 +353,7 @@
             this.btnStep.Name = "btnStep";
             this.btnStep.Size = new System.Drawing.Size(95, 33);
             this.btnStep.TabIndex = 15;
-            this.btnStep.Text = "Step";
+            this.btnStep.Text = "Step (F10)";
             this.btnStep.UseVisualStyleBackColor = true;
             this.btnStep.Click += new System.EventHandler(this.btnStep_Click);
             // 
@@ -388,19 +389,30 @@
             // 
             // btnRestart
             // 
-            this.btnRestart.Location = new System.Drawing.Point(502, 584);
+            this.btnRestart.Location = new System.Drawing.Point(398, 584);
             this.btnRestart.Name = "btnRestart";
             this.btnRestart.Size = new System.Drawing.Size(95, 33);
             this.btnRestart.TabIndex = 19;
-            this.btnRestart.Text = "Restart";
+            this.btnRestart.Text = "Restart (F2)";
             this.btnRestart.UseVisualStyleBackColor = true;
             this.btnRestart.Click += new System.EventHandler(this.btnRestart_Click);
+            // 
+            // btnRun
+            // 
+            this.btnRun.Location = new System.Drawing.Point(511, 584);
+            this.btnRun.Name = "btnRun";
+            this.btnRun.Size = new System.Drawing.Size(95, 33);
+            this.btnRun.TabIndex = 20;
+            this.btnRun.Text = "Run (F5)";
+            this.btnRun.UseVisualStyleBackColor = true;
+            this.btnRun.Click += new System.EventHandler(this.btnRun_Click);
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(746, 629);
+            this.Controls.Add(this.btnRun);
             this.Controls.Add(this.btnRestart);
             this.Controls.Add(this.lblHalted);
             this.Controls.Add(this.txtBreakPoint);
@@ -457,5 +469,6 @@
         private System.Windows.Forms.TextBox txtBreakPoint;
         private System.Windows.Forms.Label lblHalted;
         private System.Windows.Forms.Button btnRestart;
+        private System.Windows.Forms.Button btnRun;
     }
 }

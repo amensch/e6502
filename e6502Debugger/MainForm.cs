@@ -22,7 +22,12 @@ namespace e6502Debugger
         public MainForm()
         {
             InitializeComponent();
+            ClearScreen();
+            LoadTestProgram();
+        }
 
+        private void ClearScreen()
+        {
             lblA.Text = "";
             lblX.Text = "";
             lblY.Text = "";
@@ -32,8 +37,6 @@ namespace e6502Debugger
             lstMemory.Items.Clear();
             lstPC.Items.Clear();
             txtBreakPoint.Text = "";
-
-            LoadExtendedTestProgram();
         }
 
         // This method will eventually go away.  This is here for easy loading while I am debugging.
@@ -192,12 +195,37 @@ namespace e6502Debugger
             {
                 btnStep.PerformClick();
             }
+            else if( e.KeyCode == Keys.F5)
+            {
+                btnRun.PerformClick();
+            }
+            else if (e.KeyCode == Keys.F2)
+            {
+                btnRestart.PerformClick();
+            }
         }
 
         private void btnRestart_Click(object sender, EventArgs e)
         {
             LoadTestProgram();
             lblHalted.Visible = false;
+        }
+
+        private void btnRun_Click(object sender, EventArgs e)
+        {
+            ushort prev_pc;
+            lblHalted.Visible = false;
+
+            do
+            {
+                prev_pc = cpu.PC;
+                cpu.ExecuteNext();
+            } while (prev_pc != cpu.PC);
+
+            if (prev_pc == cpu.PC)
+                lblHalted.Visible = true;
+
+            UpdateScreen();
         }
     }
 }
