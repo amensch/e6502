@@ -33,29 +33,23 @@ namespace e6502Debugger
             lstPC.Items.Clear();
             txtBreakPoint.Text = "";
 
-            LoadTestProgram();
+            LoadExtendedTestProgram();
         }
 
+        // This method will eventually go away.  This is here for easy loading while I am debugging.
         private void LoadTestProgram()
         {
             cpu = new e6502();
+            cpu.LoadProgram(0x0000, File.ReadAllBytes(@"..\..\..\e6502Tests\Resources\6502_functional_test.bin"));
+            cpu.PC = 0x0400;
+            UpdateScreen();
+        }
 
-            // instead of using file-open, be lazy and automatically load the file
-            
-            // Stuck on $339F -- need to implement BCD
-            // Getting to $3399 indicates a successful test!
-
-            byte[] program;
-
-            if (System.Environment.MachineName.StartsWith("US"))
-            {
-                program = File.ReadAllBytes(@"C:\Users\menschas\Source\6502_65C02_functional_tests\bin_files\65C02_extended_opcodes_test.bin");
-            }
-            else
-            {
-                program = File.ReadAllBytes(@"C:\Users\adam\Documents\My Projects\6502_65C02_functional_tests\bin_files\65C02_extended_opcodes_test.bin");
-            }
-            cpu.LoadProgram(0x0000, program);
+        // This method will eventually go away.  This is here for easy loading while I am debugging.
+        private void LoadExtendedTestProgram()
+        {
+            cpu = new e6502();
+            cpu.LoadProgram(0x0000, File.ReadAllBytes(@"..\..\..\e6502Tests\Resources\65C02_extended_opcodes_test.bin"));
             cpu.PC = 0x0400;
             UpdateScreen();
         }
@@ -140,6 +134,7 @@ namespace e6502Debugger
                         prev_pc = cpu.PC;
                         cpu.ExecuteNext();
                     } while ( (cpu.PC != bp) && ( prev_pc != cpu.PC ));
+
                     if (prev_pc == cpu.PC)
                         lblHalted.Visible = true;
                 }

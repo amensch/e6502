@@ -18,17 +18,7 @@ namespace e6502Tests
              */
 
             e6502 cpu = new e6502();
-            byte[] program;
-
-            if (System.Environment.MachineName.StartsWith("US"))
-            {
-                program = File.ReadAllBytes(@"C:\Users\menschas\Source\6502_65C02_functional_tests\bin_files\6502_functional_test.bin");
-            }
-            else
-            {
-                program = File.ReadAllBytes(@"C:\Users\adam\Documents\My Projects\6502_65C02_functional_tests\bin_files\6502_functional_test.bin");
-            }
-            cpu.LoadProgram(0x0000, program);
+            cpu.LoadProgram(0x0000, File.ReadAllBytes(@"..\..\Resources\6502_functional_test.bin"));
             cpu.PC = 0x0400;
 
             ushort prev_pc;
@@ -52,7 +42,7 @@ namespace e6502Tests
             double mhz = (cycle_count / sw.ElapsedMilliseconds) / 1000;
             Debug.WriteLine("Effective Mhz: " + mhz.ToString("N1"));
 
-            Assert.AreEqual(0x3399, cpu.PC, "Test program failed at " + cpu.PC.ToString("X4"));
+            Assert.AreEqual(0x3399, cpu.PC, "Test program failed at $" + cpu.PC.ToString("X4"));
         }
     }
 }

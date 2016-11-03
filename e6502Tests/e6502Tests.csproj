@@ -63,6 +63,14 @@
       <Name>e6502CPU</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\6502_functional_test.bin" />
+    <None Include="Resources\65C02_extended_opcodes_test.bin" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\6502_functional_test.lst" />
+    <Content Include="Resources\65C02_extended_opcodes_test.lst" />
+  </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
       <ItemGroup>
