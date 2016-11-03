@@ -74,11 +74,15 @@ namespace e6502CPU
 
                     try
                     {
-                        rec_instr = instruction.Substring(0, 3);
+                        int idx = instruction.IndexOf(" ");
+                        if (idx > -1)
+                            rec_instr = instruction.Substring(0, instruction.IndexOf(" "));
+                        else
+                            rec_instr = instruction.TrimEnd();
                     }
                     catch
                     {
-                        throw new InvalidDataException("Line + [" + line + "] (assembler) has inva lid data");
+                        throw new InvalidDataException("Line + [" + line + "] (assembler) has invalid data");
                     }
 
                     switch(address)
@@ -124,6 +128,9 @@ namespace e6502CPU
                             break;
                         case "zeropage,0":
                             rec_mode = AddressModes.ZeroPage0;
+                            break;
+                        case "branchext":
+                            rec_mode = AddressModes.BranchExt;
                             break;
                         default:
                             throw new InvalidDataException("Line + [" + line + "] (addressing) has invalid data");

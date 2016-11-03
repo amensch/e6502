@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using System.Diagnostics;
 namespace e6502CPU
 {
     public class e6502
@@ -136,19 +136,20 @@ namespace e6502CPU
                         result = HexToBCD(A) + HexToBCD((byte)oper);
                         if (CF) result++;
 
-                        ZF = (result == 0);
                         CF = (result > 99);
-                        NF = (result & 0x80) == 0x80;
-
-                        //NOTE: V flag has no special meaning in decimal mode
 
                         if (result > 99 )
                         {
                             result -= 100;
                         }
+                        ZF = (result == 0);
 
                         // convert decimal result to hex BCD result
                         A = BCDToHex(result);
+
+                        // Unlike ZF and CF, the NF flag represents the MSB after conversion
+                        // to BCD.
+                        NF = (A > 0x7f);
                     }
                     else
                     {
@@ -315,8 +316,14 @@ namespace e6502CPU
                 case 0x89:
                     result = A & oper;
 
-                    NF = ((oper & 0x80) == 0x80);
-                    VF = ((oper & 0x40) == 0x40);
+                    // The WDC programming manual for 65C02 indicates NV are unaffected in immediate mode.
+                    // The extended op code test program reflects this.
+                    if (_currentOP.AddressMode != AddressModes.Immediate)
+                    {
+                        NF = ((oper & 0x80) == 0x80);
+                        VF = ((oper & 0x40) == 0x40);
+                    }
+
                     ZF = ((result & 0xff) == 0x00);
 
                     PC += _currentOP.Bytes;
@@ -405,6 +412,9 @@ namespace e6502CPU
 
                     // set interrupt flag
                     IF = true;
+
+                    // clear the decimal flag
+                    DF = false;
 
                     // load program counter with proper interrupt vector
                     // BRK/IRQ has LSB at $FFFE and MSB at $FFFF
@@ -628,7 +638,7 @@ namespace e6502CPU
                     }
                     else if( _currentOP.AddressMode == AddressModes.AbsoluteX)
                     {
-                        PC = memory[(ushort)(GetImmWord() + X)];
+                        PC = GetWordFromMemory((GetImmWord() + X));
                     }
                     else
                     {
@@ -811,7 +821,50 @@ namespace e6502CPU
                     PC += _currentOP.Bytes;
                     break;
 
+                // RMBx - clear bit in memory (no flags)
+                // Clear the zero page location of the specified bit
+                case 0x07:
+                case 0x17:
+                case 0x27:
+                case 0x37:
+                case 0x47:
+                case 0x57:
+                case 0x67:
+                case 0x77:
 
+                    // upper nibble specifies the bit to check
+                     check_bit = (byte)(_currentOP.OpCode >> 4);
+                     check_value = 0x01;
+                    for (int ii = 0; ii < check_bit; ii++)
+                    {
+                        check_value = (byte)(check_value << 1);
+                    }
+                    check_value = (byte)~check_value;
+                    SaveOperand(_currentOP.AddressMode, oper & check_value);
+                    PC += _currentOP.Bytes;
+                    break;
+
+                // SMBx - set bit in memory (no flags)
+                // Set the zero page location of the specified bit
+                case 0x87:
+                case 0x97:
+                case 0xa7:
+                case 0xb7:
+                case 0xc7:
+                case 0xd7:
+                case 0xe7:
+                case 0xf7:
+
+                    // upper nibble specifies the bit to check (but ignore bit 7)
+                    check_bit = (byte)((_currentOP.OpCode & 0x70) >> 4);
+                    check_value = 0x01;
+                    for (int ii = 0; ii < check_bit; ii++)
+                    {
+                        check_value = (byte)(check_value << 1);
+                    }
+                    SaveOperand(_currentOP.AddressMode, oper | check_value);
+                    PC += _currentOP.Bytes;
+                    break;
 
                 // ROL - rotate left one bit (NZC)
                 // C <- 76543210 <- C
@@ -907,16 +960,18 @@ namespace e6502CPU
                         result = HexToBCD(A) - HexToBCD((byte)oper);
                         if (!CF) result--;
 
-                        ZF = (result == 0);
                         CF = (result >= 0);
-                        NF = (result & 0x80) == 0x80;
-
-                        //NOTE: V flag has no special meaning in decimal mode
 
                         // BCD numbers wrap around when subtraction is negative
                         if (result < 0)
                             result += 100;
+                        ZF = (result == 0);
+
                         A = BCDToHex(result);
+                        
+                        // Unlike ZF and CF, the NF flag represents the MSB after conversion
+                        // to BCD.
+                        NF = (A > 0x7f);
                     }
                     else
                     {
@@ -1046,8 +1101,13 @@ namespace e6502CPU
                     PC += _currentOP.Bytes;
                     break;
 
+                // The original 6502 has undocumented and erratic behavior if
+                // undocumented op codes are invoked.  The 65C02 on the other hand
+                // are guaranteed to be NOPs although they vary in number of bytes
+                // and cycle counts.
                 default:
-                    throw new InvalidOperationException("OpCode " + _currentOP.OpCode.ToString("X4") + " is invalid");
+                    PC += _currentOP.Bytes;
+                    break;
             }
         }
 
@@ -1159,8 +1219,14 @@ namespace e6502CPU
                     break;
 
                 // this mode is from the 65C02 extended set
+                // works like ZeroPageY when Y=0
                 case AddressModes.ZeroPage0:
-                    oper = memory[(GetImmByte()) & 0xff];
+                    oper = memory[GetWordFromMemory((GetImmByte()) & 0xff)];
+                    break;
+
+                // for this mode do the same thing as ZeroPage
+                case AddressModes.BranchExt:
+                    oper = memory[GetImmByte()];
                     break;
                 default:
                     break;
@@ -1233,6 +1299,15 @@ namespace e6502CPU
                 case AddressModes.ZeroPageY:
                     memory[(GetImmByte() + Y) & 0xff] = (byte)data;
                     break;
+                case AddressModes.ZeroPage0:
+                    memory[GetWordFromMemory((GetImmByte()) & 0xff)] = (byte)data;
+                    break;
+
+                // for this mode do the same thing as ZeroPage
+                case AddressModes.BranchExt:
+                    memory[GetImmByte()] = (byte)data;
+                    break;
+
                 default:
                     break;
             }

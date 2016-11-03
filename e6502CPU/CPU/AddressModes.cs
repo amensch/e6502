@@ -31,8 +31,11 @@ namespace e6502CPU
         Relative,       // branch target is PC + 8bit offset (signed)
 
         ZeroPage,       // operand is address &00xx (xx 8 bit immediate)
-        ZeroPage0,       // operand is address &00xx (works like ZeroPageY with Y=0)
-        ZeroPageX,       // operand is address &00xx (xx 8 bit immediate) incremented by X
-        ZeroPageY       // operand is address &00xx (xx 8 bit immediate) incremented by Y
+        ZeroPage0,      // operand is address &00xx (works like ZeroPageY with Y=0)
+        ZeroPageX,      // operand is address &00xx (xx 8 bit immediate) incremented by X
+        ZeroPageY,      // operand is address &00xx (xx 8 bit immediate) incremented by Y
+
+        BranchExt       // extended 65C02 instructions - 3 byte branch instructions
+
     };
 }

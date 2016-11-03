@@ -82,6 +82,9 @@ namespace e6502CPU
                 case AddressModes.ZeroPage:
                     dasm += " $" + oper.ToString("X2");
                     break;
+                case AddressModes.ZeroPage0:
+                    dasm += " ($" + oper.ToString("X2") + ")";
+                    break;
                 case AddressModes.ZeroPageX:
                     dasm += " $" + oper.ToString("X2") + ",X";
                     break;
@@ -106,6 +109,15 @@ namespace e6502CPU
                     break;
 
                 case AddressModes.Implied: // do nothing
+                    break;
+
+                case AddressModes.BranchExt:
+                    // assumption is that in this mode the oper passed in is a word and not a byte
+                    byte zp = (byte)(oper >> 8);
+                    byte br = (byte)(oper & 0xff);
+                    dasm += " $" + zp.ToString("X2") + ",$" + br.ToString("X2");
+                    break;
+
                 default:
                     break;
             }
