@@ -8,7 +8,7 @@ namespace e6502CPU
 {
     public class OpCodeRecord
     {
-        public int OpCode { get; private set; }
+        public byte OpCode { get; private set; }
         public string Instruction { get; private set; }
         public AddressModes AddressMode { get; private set; }
         public ushort Bytes { get; private set; }
@@ -25,7 +25,7 @@ namespace e6502CPU
             IsValid = false;
         }
 
-        public OpCodeRecord(int opcode, string instruction, AddressModes addressmode, ushort bytes, int cycles,
+        public OpCodeRecord(byte opcode, string instruction, AddressModes addressmode, ushort bytes, int cycles,
                                bool checkPageBoundary, bool checkBranchPage )
         {
             OpCode = opcode;

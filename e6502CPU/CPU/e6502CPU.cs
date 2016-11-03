@@ -200,6 +200,62 @@ namespace e6502CPU
 
                     break;
 
+                // BBRx - test bit in memory (no flags)
+                // Test the zero page location and branch of the specified bit is clear
+                case 0x0f:
+                case 0x1f:
+                case 0x2f:
+                case 0x3f:
+                case 0x4f:
+                case 0x5f:
+                case 0x6f:
+                case 0x7f:
+
+                    // upper nibble specifies the bit to check
+                    byte check_bit = (byte)(_currentOP.OpCode >> 4);
+                    byte check_value = 0x01;
+                    for( int ii=0; ii < check_bit; ii++)
+                    {
+                        check_value = (byte)(check_value << 1);
+                    }
+
+                    // if the specified bit is 0 then branch
+                    byte offset = memory[PC + 2];
+                    PC += _currentOP.Bytes;
+
+                    if ((oper & check_value) == 0x00)
+                        PC += offset;
+
+                    break;
+
+                // BBSx - test bit in memory (no flags)
+                // Test the zero page location and branch of the specified bit is set
+                case 0x8f:
+                case 0x9f:
+                case 0xaf:
+                case 0xbf:
+                case 0xcf:
+                case 0xdf:
+                case 0xef:
+                case 0xff:
+
+                    // upper nibble specifies the bit to check (but ignore bit 7)
+                    check_bit = (byte)((_currentOP.OpCode & 0x70) >> 4);
+                    check_value = 0x01;
+                    for (int ii = 0; ii < check_bit; ii++)
+                    {
+                        check_value = (byte)(check_value << 1);
+                    }
+
+                    // if the specified bit is 1 then branch
+                    offset = memory[PC + 2];
+                    PC += _currentOP.Bytes;
+
+                    if ((oper & check_value) == check_value)
+                        PC += offset;
+
+                    break;
+
                 // BCC - branch on carry clear
                 case 0x90:
                     PC += _currentOP.Bytes;
@@ -942,6 +998,24 @@ namespace e6502CPU
                     PC += _currentOP.Bytes;
                     break;
 
+                // TRB - test and reset bits (Z)
+                // Perform bitwise AND between accumulator and contents of memory
+                case 0x14:
+                case 0x1c:
+                    SaveOperand(_currentOP.AddressMode, ~A & oper);
+                    ZF = (A & oper) == 0x00;
+                    PC += _currentOP.Bytes;
+                    break;
+
+                // TSB - test and set bits (Z)
+                // Perform bitwise AND between accumulator and contents of memory
+                case 0x04:
+                case 0x0c:
+                    SaveOperand(_currentOP.AddressMode, A | oper);
+                    ZF = (A & oper) == 0x00;
+                    PC += _currentOP.Bytes;
+                    break;
+
                 // TSX - transfer SP to X (NZ)
                 case 0xba:
                     X = SP;
@@ -973,7 +1047,7 @@ namespace e6502CPU
                     break;
 
                 default:
-                    break;
+                    throw new InvalidOperationException("OpCode " + _currentOP.OpCode.ToString("X4") + " is invalid");
             }
         }
 

@@ -55,8 +55,12 @@
     <Compile Include="e6502ExtendedTest.cs" />
     <Compile Include="e6502FuncTest.cs" />
     <Compile Include="e6502TestADC.cs" />
+    <Compile Include="e6502TestBBS.cs" />
     <Compile Include="e6502TestSBC.cs" />
+    <Compile Include="e6502TestTRB.cs" />
+    <Compile Include="e6502TestTSB.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="e6502TestBBR.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\e6502CPU\e6502CPU.csproj">

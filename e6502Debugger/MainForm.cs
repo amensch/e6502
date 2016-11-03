@@ -23,7 +23,7 @@ namespace e6502Debugger
         {
             InitializeComponent();
             ClearScreen();
-            LoadTestProgram();
+            LoadExtendedTestProgram();
         }
 
         private void ClearScreen()

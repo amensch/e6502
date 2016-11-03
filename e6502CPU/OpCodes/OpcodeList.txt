@@ -23,6 +23,22 @@ zeropage      ASL oper      06    2     5
 zeropage,X    ASL oper,X    16    2     6
 absolute      ASL oper      0E    3     6
 absolute,X    ASL oper,X    1E    3     7
+zeropage      BBR0 oper     0F    3     5
+zeropage      BBR1 oper     1F    3     5
+zeropage      BBR2 oper     2F    3     5
+zeropage      BBR3 oper     3F    3     5
+zeropage      BBR4 oper     4F    3     5
+zeropage      BBR5 oper     5F    3     5
+zeropage      BBR6 oper     6F    3     5
+zeropage      BBR7 oper     7F    3     5
+zeropage      BBS0 oper     8F    3     5
+zeropage      BBS1 oper     9F    3     5
+zeropage      BBS2 oper     AF    3     5
+zeropage      BBS3 oper     BF    3     5
+zeropage      BBS4 oper     CF    3     5
+zeropage      BBS5 oper     DF    3     5
+zeropage      BBS6 oper     EF    3     5
+zeropage      BBS7 oper     FF    3     5
 relative      BCC oper      90    2     2**
 relative      BCS oper      B0    2     2**
 relative      BEQ oper      F0    2     2**
@@ -170,6 +186,10 @@ absolute      STZ oper      9C    3     4
 absolute,X    STZ oper,X    9E    3     5
 implied       TAX           AA    1     2
 implied       TAY           A8    1     2
+zeropage      TRB           14    2     5
+absolute      TRB           1C    3     6
+zeropage      TSB           04    2     5
+absolute      TSB           0C    3     6
 implied       TSX           BA    1     2
 implied       TXA           8A    1     2
 implied       TXS           9A    1     2

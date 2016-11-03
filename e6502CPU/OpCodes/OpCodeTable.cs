@@ -138,7 +138,7 @@ namespace e6502CPU
                         throw new InvalidDataException("Line + [" + line + "] (cycles) has invalid data");
                     }
 
-                    OpCodes[rec_opcode] = new OpCodeRecord(rec_opcode, rec_instr, rec_mode, rec_bytes, rec_cycles,
+                    OpCodes[rec_opcode] = new OpCodeRecord((byte)rec_opcode, rec_instr, rec_mode, rec_bytes, rec_cycles,
                         rec_checkPageBoundary, rec_checkBranchPage);
 
                 }
