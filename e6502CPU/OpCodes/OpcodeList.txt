@@ -34,6 +34,7 @@ absolute,X    BIT oper,X    3C    3     4
 relative      BMI oper      30    2     2**
 relative      BNE oper      D0    2     2**
 relative      BPL oper      10    2     2**
+relative      BRA oper      80    2     3
 implied       BRK           00    1     7
 relative      BVC oper      50    2     2**
 relative      BVS oper      70    2     2**
@@ -81,6 +82,7 @@ implied       INX           E8    1     2
 implied       INY           C8    1     2
 absolute      JMP oper      4C    3     3
 indirect      JMP (oper)    6C    3     5
+absolute,X    JMP (oper,X)  7c    3     6
 absolute      JSR oper      20    3     6
 immediate     LDA #oper     A9    2     2
 zeropage      LDA oper      A5    2     3
@@ -118,8 +120,12 @@ absolute,Y    ORA oper,Y    19    3     4*
 zeropage,0    ORA (oper)    12    2     5
 implied       PHA           48    1     3
 implied       PHP           08    1     3
+implied       PHX           DA    1     3
+implied       PHY           5A    1     3
 implied       PLA           68    1     4
 implied       PLP           28    1     4
+implied       PLX           FA    1     4
+implied       PLY           7A    1     4
 accumulator   ROL A         2A    1     2
 zeropage      ROL oper      26    2     5
 zeropage,X    ROL oper,X    36    2     6

@@ -21,11 +21,11 @@ namespace e6502CPU
             }
             CreateTable();
 
-            foreach(var op in OpCodes)
-            {
-                if (op.CheckBranchPage)
-                    Debug.WriteLine(op.ToString());
-            }
+            //foreach(var op in OpCodes)
+            //{
+            //    if (op.CheckBranchPage)
+            //        Debug.WriteLine(op.ToString());
+            //}
         }
 
         private void CreateTable()
@@ -78,7 +78,7 @@ namespace e6502CPU
                     }
                     catch
                     {
-                        throw new InvalidDataException("Line + [" + line + "] (assembler) has invalid data");
+                        throw new InvalidDataException("Line + [" + line + "] (assembler) has inva lid data");
                     }
 
                     switch(address)

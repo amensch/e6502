@@ -314,6 +314,11 @@ namespace e6502CPU
                     }
                     break;
 
+                // BRA - unconditional branch to immediate address
+                case 0x80:
+                    PC += (ushort)oper;
+                    break;
+
                 // BRK - force break (I)
                 case 0x00:
 
@@ -553,14 +558,20 @@ namespace e6502CPU
                 // JMP - jump to new location (two byte immediate)
                 case 0x4c:
                 case 0x6c:
+                // added for 65C02
+                case 0x7c:
 
-                    if( _currentOP.AddressMode == AddressModes.Absolute)
+                    if (_currentOP.AddressMode == AddressModes.Absolute)
                     {
                         PC = GetImmWord();
                     }
-                    else if( _currentOP.AddressMode == AddressModes.Indirect)
+                    else if (_currentOP.AddressMode == AddressModes.Indirect)
                     {
                         PC = (ushort)(GetWordFromMemory(GetImmWord()));
+                    }
+                    else if( _currentOP.AddressMode == AddressModes.AbsoluteX)
+                    {
+                        PC = memory[(ushort)(GetImmWord() + X)];
                     }
                     else
                     {
@@ -693,6 +704,18 @@ namespace e6502CPU
                     PC += _currentOP.Bytes;
                     break;
 
+                // PHX - push X on stack
+                case 0xda:
+                    Push(X);
+                    PC += _currentOP.Bytes;
+                    break;
+
+                // PHY - push Y on stack
+                case 0x5a:
+                    Push(Y);
+                    PC += _currentOP.Bytes;
+                    break;
+
                 // PLA - pull accumulator from stack (NZ)
                 case 0x68:
                     A = PopByte();
@@ -714,6 +737,24 @@ namespace e6502CPU
                     CF = (sr & 0x01) == 0x01;
                     PC += _currentOP.Bytes;
                     break;
+
+                // PLX - pull X from stack (NZ)
+                case 0xfa:
+                    X = PopByte();
+                    NF = (X & 0x80) == 0x80;
+                    ZF = (X & 0xff) == 0x00;
+                    PC += _currentOP.Bytes;
+                    break;
+
+                // PLY - pull Y from stack (NZ)
+                case 0x7a:
+                    Y = PopByte();
+                    NF = (Y & 0x80) == 0x80;
+                    ZF = (Y & 0xff) == 0x00;
+                    PC += _currentOP.Bytes;
+                    break;
+
+
 
                 // ROL - rotate left one bit (NZC)
                 // C <- 76543210 <- C
