@@ -82,9 +82,9 @@ namespace e6502CPU
             // On reset the addresses 0xfffc and 0xfffd are read and PC is loaded with this value.
             // It is expected that the initial program loaded will have these values set to something.
             // Most 6502 systems contain ROM in the upper region (around 0xe000-0xffff)
-            PC = (ushort)((memory[0xfffd] << 8 | memory[0xfffc]) & 0xffff);
+            PC = GetWordFromMemory(0xfffc);
 
-            // interrupt disable is set on powerup
+            // interrupt disabled is set on powerup
             IF = true;
 
             NMIWaiting = false;
@@ -112,15 +112,17 @@ namespace e6502CPU
         {
             _extraCycles = 0;
 
-            if (!IF)
+            // Check for non maskable interrupt
+            if (NMIWaiting)
             {
-                if(NMIWaiting)
-                {
-                    DoIRQ(0xfffa);
-                    NMIWaiting = false;
-                    _extraCycles += 6;
-                }
-                else if(IRQWaiting)
+                DoIRQ(0xfffa);
+                NMIWaiting = false;
+                _extraCycles += 6;
+            }
+            // Check for hardware interrupt, if enabled
+            else if (!IF)
+            {
+                if(IRQWaiting)
                 {
                     DoIRQ(0xfffe);
                     IRQWaiting = false;
