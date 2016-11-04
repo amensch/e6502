@@ -48,6 +48,12 @@ namespace e6502CPU
         // Clock cycles to add due to page boundaries being crossed
         private int _extraCycles;
 
+        // Flag for hardware interrupt (IRQ)
+        public bool IRQWaiting { get; set; }
+
+        // Flag for non maskable interrupt (NMI)
+        public bool NMIWaiting { get; set; }
+
         public e6502()
         {
             memory = new byte[0x10000];
@@ -67,6 +73,8 @@ namespace e6502CPU
             IF = false;
             ZF = false;
             CF = false;
+            NMIWaiting = false;
+            IRQWaiting = false;
         }
 
         public void Boot()
@@ -76,6 +84,11 @@ namespace e6502CPU
             // Most 6502 systems contain ROM in the upper region (around 0xe000-0xffff)
             PC = (ushort)((memory[0xfffd] << 8 | memory[0xfffc]) & 0xffff);
 
+            // interrupt disable is set on powerup
+            IF = true;
+
+            NMIWaiting = false;
+            IRQWaiting = false;
         }
 
         public void LoadProgram(ushort startingAddress, byte[] program)
@@ -97,12 +110,26 @@ namespace e6502CPU
         // returns # of clock cycles needed to execute the instruction
         public int ExecuteNext()
         {
-            _currentOP = _opCodeTable.OpCodes[memory[PC]];
             _extraCycles = 0;
 
-            // for now just turn off the flag
-            //if (IF) IF = false;
-            
+            if (!IF)
+            {
+                if(NMIWaiting)
+                {
+                    DoIRQ(0xfffa);
+                    NMIWaiting = false;
+                    _extraCycles += 6;
+                }
+                else if(IRQWaiting)
+                {
+                    DoIRQ(0xfffe);
+                    IRQWaiting = false;
+                    _extraCycles += 6;
+                }
+            }
+
+            _currentOP = _opCodeTable.OpCodes[memory[PC]];
+
             ExecuteInstruction();
 
             return _currentOP.Cycles + _extraCycles;
@@ -391,34 +418,11 @@ namespace e6502CPU
                     // Processor adds two to the current PC
                     PC += 2;
 
-                    // Push the MSB of the PC
-                    Push((byte)(PC >> 8));
-
-                    // Push the LSB of the PC
-                    Push((byte)(PC & 0xff));
-
-                    // Push the status register
-                    int sr = 0x00;
-                    if (NF) sr = sr | 0x80;
-                    if (VF) sr = sr | 0x40;
-                    sr = sr | 0x20;
-                    sr = sr | 0x10;
-                    if (DF) sr = sr | 0x08;
-                    if (IF) sr = sr | 0x04;
-                    if (ZF) sr = sr | 0x02;
-                    if (CF) sr = sr | 0x01;
-
-                    Push((byte)sr);
-
-                    // set interrupt flag
-                    IF = true;
+                    // Call IRQ routine
+                    DoIRQ(0xfffe);
 
                     // clear the decimal flag
                     DF = false;
-
-                    // load program counter with proper interrupt vector
-                    // BRK/IRQ has LSB at $FFFE and MSB at $FFFF
-                    PC = (ushort)(memory[0xffff] << 8 | memory[0xfffe]);
 
                     break;
                 // BVC - branch on overflow clear
@@ -756,7 +760,7 @@ namespace e6502CPU
 
                 // PHP - push processor status on stack
                 case 0x08:
-                    sr = 0x00;
+                    int sr = 0x00;
 
                     if (NF) sr = sr | 0x80;
                     if (VF) sr = sr | 0x40;
@@ -1400,6 +1404,34 @@ namespace e6502CPU
             else
                 return (byte)(((result / 10) << 4) + (result % 10));
 
+        }
+
+        private void DoIRQ(ushort vector)
+        {
+            // Push the MSB of the PC
+            Push((byte)(PC >> 8));
+
+            // Push the LSB of the PC
+            Push((byte)(PC & 0xff));
+
+            // Push the status register
+            int sr = 0x00;
+            if (NF) sr = sr | 0x80;
+            if (VF) sr = sr | 0x40;
+            sr = sr | 0x20;
+            sr = sr | 0x10;
+            if (DF) sr = sr | 0x08;
+            if (IF) sr = sr | 0x04;
+            if (ZF) sr = sr | 0x02;
+            if (CF) sr = sr | 0x01;
+
+            Push((byte)sr);
+
+            // set interrupt disable flag
+            IF = true;
+
+            // load program counter with the interrupt vector
+            PC = GetWordFromMemory(vector);
         }
     }
 }
