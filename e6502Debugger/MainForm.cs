@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 using e6502CPU;
+using System.Diagnostics;
 
 namespace e6502Debugger
 {
@@ -23,7 +24,7 @@ namespace e6502Debugger
         {
             InitializeComponent();
             ClearScreen();
-            LoadExtendedTestProgram();
+            //LoadExtendedTestProgram();
         }
 
         private void ClearScreen()
@@ -64,6 +65,8 @@ namespace e6502Debugger
 
             if(dlg.ShowDialog() == DialogResult.OK)
             {
+                cpu = new e6502();
+
                 byte[] program = File.ReadAllBytes(dlg.FileName);
                 cpu.LoadProgram(0x0000, program);
 
@@ -215,7 +218,6 @@ namespace e6502Debugger
         {
             ushort prev_pc;
             lblHalted.Visible = false;
-
             do
             {
                 prev_pc = cpu.PC;
