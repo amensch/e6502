@@ -54,6 +54,7 @@
   <ItemGroup>
     <Compile Include="e6502ExtendedTest.cs" />
     <Compile Include="e6502FuncTest.cs" />
+    <Compile Include="e6502InterruptTest.cs" />
     <Compile Include="e6502TestADC.cs" />
     <Compile Include="e6502TestBBS.cs" />
     <Compile Include="e6502TestSBC.cs" />
