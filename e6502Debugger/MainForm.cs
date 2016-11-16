@@ -23,7 +23,7 @@ namespace e6502Debugger
         {
             InitializeComponent();
             ClearScreen();
-            LoadExtendedTestProgram();
+            LoadInterruptTestProgram();
         }
 
         private void ClearScreen()
@@ -39,7 +39,7 @@ namespace e6502Debugger
             txtBreakPoint.Text = "";
         }
 
-        // This method will eventually go away.  This is here for easy loading while I am debugging.
+        // This is here for easy loading while I am debugging.
         private void LoadTestProgram()
         {
             cpu = new e6502();
@@ -48,11 +48,20 @@ namespace e6502Debugger
             UpdateScreen();
         }
 
-        // This method will eventually go away.  This is here for easy loading while I am debugging.
+        // This is here for easy loading while I am debugging.
         private void LoadExtendedTestProgram()
         {
             cpu = new e6502();
             cpu.LoadProgram(0x0000, File.ReadAllBytes(@"..\..\..\e6502Tests\Resources\65C02_extended_opcodes_test.bin"));
+            cpu.PC = 0x0400;
+            UpdateScreen();
+        }
+
+        // This is here for easy loading while I am debugging.
+        private void LoadInterruptTestProgram()
+        {
+            cpu = new e6502();
+            cpu.LoadProgram(0x0400, File.ReadAllBytes(@"..\..\..\e6502Tests\Resources\6502_interrupt_test.bin"));
             cpu.PC = 0x0400;
             UpdateScreen();
         }
@@ -128,6 +137,8 @@ namespace e6502Debugger
             ushort bp;
             ushort prev_pc;
             lblHalted.Visible = false;
+
+
             if (txtBreakPoint.Text.Length == 4)
             {
                 if (ushort.TryParse(txtBreakPoint.Text, System.Globalization.NumberStyles.AllowHexSpecifier, null, out bp))
@@ -136,6 +147,22 @@ namespace e6502Debugger
                     {
                         prev_pc = cpu.PC;
                         cpu.ExecuteNext();
+
+                        switch (prev_pc)
+                        {
+                            case 0x0434:
+                            case 0x0464:
+                            case 0x04a3:
+                            case 0x04de:
+                            case 0x05c8:
+                            case 0x05f8:
+                            case 0x0637:
+                            case 0x0672:
+                            case 0x06a0:
+                            case 0x06db:
+                                cpu.IRQWaiting = true;
+                                break;
+                        }
                     } while ( (cpu.PC != bp) && ( prev_pc != cpu.PC ));
 
                     if (prev_pc == cpu.PC)
@@ -143,13 +170,49 @@ namespace e6502Debugger
                 }
                 else
                 {
+                    prev_pc = cpu.PC;
                     cpu.ExecuteNext();
+
+                    switch (prev_pc)
+                    {
+                        case 0x0434:
+                        case 0x0464:
+                        case 0x04a3:
+                        case 0x04de:
+                        case 0x05c8:
+                        case 0x05f8:
+                        case 0x0637:
+                        case 0x0672:
+                        case 0x06a0:
+                        case 0x06db:
+                            cpu.IRQWaiting = true;
+                            break;
+                    }
                 }
             }
             else
             {
+                prev_pc = cpu.PC;
                 cpu.ExecuteNext();
+
+                switch (prev_pc)
+                {
+                    case 0x0434:
+                    case 0x0464:
+                    case 0x04a3:
+                    case 0x04de:
+                    case 0x05c8:
+                    case 0x05f8:
+                    case 0x0637:
+                    case 0x0672:
+                    case 0x06a0:
+                    case 0x06db:
+                        cpu.IRQWaiting = true;
+                        break;
+                }
             }
+
+
             UpdateScreen();
         }
 
@@ -207,7 +270,7 @@ namespace e6502Debugger
 
         private void btnRestart_Click(object sender, EventArgs e)
         {
-            LoadTestProgram();
+            LoadInterruptTestProgram();
             lblHalted.Visible = false;
         }
 
@@ -215,6 +278,22 @@ namespace e6502Debugger
         {
             ushort prev_pc;
             lblHalted.Visible = false;
+
+            switch (cpu.PC)
+            {
+                case 0x0434:
+                case 0x0464:
+                case 0x04a3:
+                case 0x04de:
+                case 0x05c8:
+                case 0x05f8:
+                case 0x0637:
+                case 0x0672:
+                case 0x06a0:
+                case 0x06db:
+                    cpu.IRQWaiting = true;
+                    break;
+            }
 
             do
             {

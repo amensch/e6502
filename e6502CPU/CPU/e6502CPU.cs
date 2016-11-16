@@ -27,6 +27,7 @@ namespace e6502CPU
         // Status Registers (in order bit 7 to 0)
         public bool NF;    // negative flag (N)
         public bool VF;    // overflow flag (V)
+                           // bit 5 is unused
         public bool BF;    // breakpoint flag (B)
         public bool DF;    // binary coded decimal flag (D)
         public bool IF;  // interrupt flag (I)
@@ -70,7 +71,7 @@ namespace e6502CPU
             VF = false;
             BF = false;
             DF = false;
-            IF = false;
+            IF = true;
             ZF = false;
             CF = false;
             NMIWaiting = false;
@@ -421,7 +422,7 @@ namespace e6502CPU
                     PC += 2;
 
                     // Call IRQ routine
-                    DoIRQ(0xfffe);
+                    DoIRQ(0xfffe, true);
 
                     // clear the decimal flag
                     DF = false;
@@ -766,8 +767,8 @@ namespace e6502CPU
 
                     if (NF) sr = sr | 0x80;
                     if (VF) sr = sr | 0x40;
-                    sr = sr | 0x20; // bit 5 is always on
-                    sr = sr | 0x10; // bit 4 is always on for PHP
+                    sr = sr | 0x20; // bit 5 is always 1
+                    sr = sr | 0x10; // bit 4 is always 1 for PHP
                     if (DF) sr = sr | 0x08;
                     if (IF) sr = sr | 0x04;
                     if (ZF) sr = sr | 0x02;
@@ -1410,6 +1411,11 @@ namespace e6502CPU
 
         private void DoIRQ(ushort vector)
         {
+            DoIRQ(vector, false);
+        }
+
+        private void DoIRQ(ushort vector, bool isBRK)
+        {
             // Push the MSB of the PC
             Push((byte)(PC >> 8));
 
@@ -1420,8 +1426,12 @@ namespace e6502CPU
             int sr = 0x00;
             if (NF) sr = sr | 0x80;
             if (VF) sr = sr | 0x40;
-            sr = sr | 0x20;
-            sr = sr | 0x10;
+
+            sr = sr | 0x20;             // bit 5 is unused and always 1
+
+            if(isBRK)
+                sr = sr | 0x10;         // software interrupt (BRK) pushes B flag as 1
+                                        // hardware interrupt pushes B flag as 0
             if (DF) sr = sr | 0x08;
             if (IF) sr = sr | 0x04;
             if (ZF) sr = sr | 0x02;
