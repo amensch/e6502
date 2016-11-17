@@ -298,49 +298,19 @@ namespace e6502CPU
                 // BCC - branch on carry clear
                 case 0x90:
                     PC += _currentOP.Bytes;
-                    if (!CF)
-                    {
-                        if (_currentOP.CheckBranchPage)
-                        {
-                            if ((PC & 0xff00) == ((PC + oper) & 0xff00))
-                                _extraCycles = 1;
-                            else if ((PC & 0xff00) != ((PC + oper) & 0xff00))
-                                _extraCycles = 2;
-                        }
-                        PC += (ushort)oper; 
-                    }
+                    CheckBranch(!CF, oper);
                     break;
 
                 // BCS - branch on carry set
                 case 0xb0:
                     PC += _currentOP.Bytes;
-                    if (CF)
-                    {
-                        if (_currentOP.CheckBranchPage)
-                        {
-                            if ((PC & 0xff00) == ((PC + oper) & 0xff00))
-                                _extraCycles = 1;
-                            else if ((PC & 0xff00) != ((PC + oper) & 0xff00))
-                                _extraCycles = 2;
-                        }
-                        PC += (ushort)oper;
-                    }
+                    CheckBranch(CF, oper);
                     break;
 
                 // BEQ - branch on zero
                 case 0xf0:
                     PC += _currentOP.Bytes;
-                    if (ZF)
-                    {
-                        if (_currentOP.CheckBranchPage)
-                        {
-                            if ((PC & 0xff00) == ((PC + oper) & 0xff00))
-                                _extraCycles = 1;
-                            else if ((PC & 0xff00) != ((PC + oper) & 0xff00))
-                                _extraCycles = 2;
-                        }
-                        PC += (ushort)oper;
-                    }
+                    CheckBranch(ZF, oper);
                     break;
 
                 // BIT - test bits in memory with accumulator (NZV)
@@ -370,49 +340,19 @@ namespace e6502CPU
                 // BMI - branch on negative
                 case 0x30:
                     PC += _currentOP.Bytes;
-                    if (NF)
-                    {
-                        if (_currentOP.CheckBranchPage)
-                        {
-                            if ((PC & 0xff00) == ((PC + oper) & 0xff00))
-                                _extraCycles = 1;
-                            else if ((PC & 0xff00) != ((PC + oper) & 0xff00))
-                                _extraCycles = 2;
-                        }
-                        PC += (ushort)oper;
-                    }
+                    CheckBranch(NF, oper);
                     break;
 
                 // BNE - branch on non zero
                 case 0xd0:
                     PC += _currentOP.Bytes;
-                    if (!ZF)
-                    {
-                        if (_currentOP.CheckBranchPage)
-                        {
-                            if ((PC & 0xff00) == ((PC + oper) & 0xff00))
-                                _extraCycles = 1;
-                            else if ((PC & 0xff00) != ((PC + oper) & 0xff00))
-                                _extraCycles = 2;
-                        }
-                        PC += (ushort)oper;
-                    }
+                    CheckBranch(!ZF, oper);
                     break;
 
                 // BPL - branch on non negative
                 case 0x10:
                     PC += _currentOP.Bytes;
-                    if (!NF)
-                    {
-                        if (_currentOP.CheckBranchPage)
-                        {
-                            if ((PC & 0xff00) == ((PC + oper) & 0xff00))
-                                _extraCycles = 1;
-                            else if ((PC & 0xff00) != ((PC + oper) & 0xff00))
-                                _extraCycles = 2;
-                        }
-                        PC += (ushort)oper;
-                    }
+                    CheckBranch(!NF, oper);
                     break;
 
                 // BRA - unconditional branch to immediate address
@@ -442,33 +382,13 @@ namespace e6502CPU
                 // BVC - branch on overflow clear
                 case 0x50:
                     PC += _currentOP.Bytes;
-                    if (!VF)
-                    {
-                        if (_currentOP.CheckBranchPage)
-                        {
-                            if ((PC & 0xff00) == ((PC + oper) & 0xff00))
-                                _extraCycles = 1;
-                            else if ((PC & 0xff00) != ((PC + oper) & 0xff00))
-                                _extraCycles = 2;
-                        }
-                        PC += (ushort)oper;
-                    }
+                    CheckBranch(!VF, oper);
                     break;
 
                 // BVS - branch on overflow set
                 case 0x70:
                     PC += _currentOP.Bytes;
-                    if (VF)
-                    {
-                        if (_currentOP.CheckBranchPage)
-                        {
-                            if ((PC & 0xff00) == ((PC + oper) & 0xff00))
-                                _extraCycles = 1;
-                            else if ((PC & 0xff00) != ((PC + oper) & 0xff00))
-                                _extraCycles = 2;
-                        }
-                        PC += (ushort)oper;
-                    }
+                    CheckBranch(VF, oper);
                     break;
 
                 // CLC - clear carry flag
@@ -1453,6 +1373,23 @@ namespace e6502CPU
 
             // load program counter with the interrupt vector
             PC = GetWordFromMemory(vector);
+        }
+        
+        private void CheckBranch(bool flag, int oper)
+        {
+            if (flag)
+            {
+                // extra cycle on branch taken
+                _extraCycles++;
+
+                // extra cycle if branch destination is a different page than
+                // the next instruction
+                if ((PC & 0xff00) != ((PC + oper) & 0xff00))
+                    _extraCycles++;
+
+                PC += (ushort)oper;
+            }
+
         }
     }
 }
