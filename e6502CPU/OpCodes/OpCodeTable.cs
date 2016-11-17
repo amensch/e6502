@@ -30,8 +30,8 @@ namespace e6502CPU
 
         private void CreateTable()
         {
-            StreamReader sr = new StreamReader("OpCodes\\OpcodeList.txt");
-            string line;
+            //string[] oplist = e6502CPU.Properties.Resources.OpcodeList.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+            OpCodeReader oplist = new OpCodeReader();
 
             string address;
             string instruction;
@@ -48,12 +48,8 @@ namespace e6502CPU
             bool rec_checkBranchPage;
 
             // throw away the first two lines
-            sr.ReadLine();
-            sr.ReadLine();
-            do
+            foreach( String line in oplist )
             {
-                line = sr.ReadLine();
-
                 if (line.Length > 40)
                 {
                     address = line.Substring(0, 14).Trim();
@@ -150,9 +146,7 @@ namespace e6502CPU
 
                 }
 
-            } while (!sr.EndOfStream);
-
-            line = "Success";
+            } 
 
         }
 
