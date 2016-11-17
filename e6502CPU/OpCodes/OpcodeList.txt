@@ -50,7 +50,7 @@ absolute,X    BIT oper,X    3C    3     4
 relative      BMI oper      30    2     2**
 relative      BNE oper      D0    2     2**
 relative      BPL oper      10    2     2**
-relative      BRA oper      80    2     3
+relative      BRA oper      80    2     2
 implied       BRK           00    1     7
 relative      BVC oper      50    2     2**
 relative      BVS oper      70    2     2**

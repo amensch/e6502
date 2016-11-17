@@ -188,6 +188,10 @@ namespace e6502CPU
                         // Unlike ZF and CF, the NF flag represents the MSB after conversion
                         // to BCD.
                         NF = (A > 0x7f);
+
+                        // extra clock cycle on CMOS in decimal mode
+                        if (_cpuType == e6502Type.CMOS)
+                            _extraCycles++;
                     }
                     else
                     {
@@ -358,7 +362,7 @@ namespace e6502CPU
                 // BRA - unconditional branch to immediate address
                 case 0x80:
                     PC += _currentOP.Bytes;
-                    PC += (ushort)oper;
+                    CheckBranch(true, oper);
                     break;
 
                 // BRK - force break (I)
@@ -582,6 +586,10 @@ namespace e6502CPU
                     {
                         throw new InvalidOperationException("This address mode is invalid with the JMP instruction");
                     }
+
+                    // CMOS fixes a bug in this op code which results in an extra clock cycle
+                    if (_currentOP.OpCode == 0x6c && _cpuType == e6502Type.CMOS)
+                        _extraCycles++;
                     break;
 
                 // JSR - jump to new location and save return address
@@ -908,6 +916,10 @@ namespace e6502CPU
                         // Unlike ZF and CF, the NF flag represents the MSB after conversion
                         // to BCD.
                         NF = (A > 0x7f);
+
+                        // extra clock cycle on CMOS in decimal mode
+                        if (_cpuType == e6502Type.CMOS)
+                            _extraCycles++;
                     }
                     else
                     {
