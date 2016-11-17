@@ -36,7 +36,7 @@ namespace e6502CPU
                            // bit 5 is unused
                            // bit 4 is the break flag however it is not a physical flag in the CPU
         public bool DF;    // binary coded decimal flag (D)
-        public bool IF;  // interrupt flag (I)
+        public bool IF;    // interrupt flag (I)
         public bool ZF;    // zero flag (Z)
         public bool CF;    // carry flag (C)
 
@@ -49,10 +49,7 @@ namespace e6502CPU
         // The current opcode
         private OpCodeRecord _currentOP;
 
-        // The current operand (for debugging)
-        public int Operand { get; private set; }
-
-        // Clock cycles to add due to page boundaries being crossed
+        // Clock cycles to adjust due to page boundaries being crossed, branches taken, or NMOS/CMOS differences
         private int _extraCycles;
 
         // Flag for hardware interrupt (IRQ)
@@ -108,7 +105,6 @@ namespace e6502CPU
 
         public string DasmNextInstruction()
         {
-            // NOTE: This method does not alter the program counter
             OpCodeRecord oprec = _opCodeTable.OpCodes[ memory[PC] ];
             if (oprec.Bytes == 3)
                 return oprec.Dasm( GetImmWord() );
@@ -121,7 +117,7 @@ namespace e6502CPU
         {
             _extraCycles = 0;
 
-            // Check for non maskable interrupt
+            // Check for non maskable interrupt (has higher priority over IRQ)
             if (NMIWaiting)
             {
                 DoIRQ(0xfffa);
@@ -148,10 +144,6 @@ namespace e6502CPU
 
         private void ExecuteInstruction()
         {
-            // Get operand (if applicable)
-            Operand = GetOperand(_currentOP.AddressMode);
-
-            // Temporarily store results so flag calculations can be made
             int result;
             int oper = GetOperand(_currentOP.AddressMode);
 
