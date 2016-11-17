@@ -24,7 +24,6 @@ namespace e6502Tests
             ushort prev_pc;
             long instr_count = 0;
             long cycle_count = 0;
-            double mhz;
             Stopwatch sw = new Stopwatch();
 
             sw.Start();
@@ -34,20 +33,30 @@ namespace e6502Tests
                 prev_pc = cpu.PC;
                 cycle_count += cpu.ExecuteNext();
 
-                // Add IRQ interrupts where expected
+                // Add interrupts where expected in the test.
                 switch (prev_pc)
                 {
+                    // IRQ tests
                     case 0x0434:
                     case 0x0464:
                     case 0x04a3:
                     case 0x04de:
+                        cpu.IRQWaiting = true;
+                        break;
+
+                    // NMI tests
                     case 0x05c8:
                     case 0x05f8:
                     case 0x0637:
                     case 0x0672:
+                        cpu.NMIWaiting = true;
+                        break;
+
+                    // IRQ and NMI waiting tests
                     case 0x06a0:
                     case 0x06db:
                         cpu.IRQWaiting = true;
+                        cpu.NMIWaiting = true;
                         break;
                 }
 
@@ -57,13 +66,6 @@ namespace e6502Tests
             Debug.WriteLine("Time: " + sw.ElapsedMilliseconds.ToString() + " ms");
             Debug.WriteLine("Cycles: " + cycle_count.ToString("N0"));
             Debug.WriteLine("Instructions: " + instr_count.ToString("N0"));
-
-            if (sw.ElapsedMilliseconds > 0)
-                mhz = (cycle_count / sw.ElapsedMilliseconds) / 1000;
-            else
-                mhz = 0;
-
-            Debug.WriteLine("Effective Mhz: " + mhz.ToString("N1"));
 
             Assert.AreEqual(0x06ec, cpu.PC, "Test program failed at $" + cpu.PC.ToString("X4"));
         }

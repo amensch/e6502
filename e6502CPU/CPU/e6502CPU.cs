@@ -28,7 +28,7 @@ namespace e6502CPU
         public bool NF;    // negative flag (N)
         public bool VF;    // overflow flag (V)
                            // bit 5 is unused
-        public bool BF;    // breakpoint flag (B)
+                           // bit 4 is the break flag however it is not a physical flag in the CPU
         public bool DF;    // binary coded decimal flag (D)
         public bool IF;  // interrupt flag (I)
         public bool ZF;    // zero flag (Z)
@@ -69,7 +69,6 @@ namespace e6502CPU
             PC = 0;
             NF = false;
             VF = false;
-            BF = false;
             DF = false;
             IF = true;
             ZF = false;
@@ -424,8 +423,14 @@ namespace e6502CPU
                     // Call IRQ routine
                     DoIRQ(0xfffe, true);
 
-                    // clear the decimal flag
-                    DF = false;
+                    // Whether or not the decimal flag is cleared depends on the type of 6502 CPU.
+                    // The CMOS 65C02 clears this flag but the NMOS 6502 does not.
+
+                    // For now this will default to not alter the decimal flag however eventually this
+                    // will need to be configurable based on CPU type.
+
+                    // The interrupt testing program included in the unit tests expects DF to be unaltered during a BRK.
+                    // DF = false;
 
                     break;
                 // BVC - branch on overflow clear
@@ -804,7 +809,6 @@ namespace e6502CPU
 
                     NF = (sr & 0x80) == 0x80;
                     VF = (sr & 0x40) == 0x40;
-                    BF = (sr & 0x10) == 0x10;
                     DF = (sr & 0x08) == 0x08;
                     IF = (sr & 0x04) == 0x04;
                     ZF = (sr & 0x02) == 0x02;
@@ -934,7 +938,6 @@ namespace e6502CPU
 
                     NF = (sr & 0x80) == 0x80;
                     VF = (sr & 0x40) == 0x40;
-                    BF = (sr & 0x10) == 0x10;
                     DF = (sr & 0x08) == 0x08;
                     IF = (sr & 0x04) == 0x04;
                     ZF = (sr & 0x02) == 0x02;

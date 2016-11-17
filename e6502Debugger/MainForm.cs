@@ -23,7 +23,7 @@ namespace e6502Debugger
         {
             InitializeComponent();
             ClearScreen();
-            LoadInterruptTestProgram();
+            //LoadInterruptTestProgram();
         }
 
         private void ClearScreen()
@@ -74,6 +74,7 @@ namespace e6502Debugger
             if(dlg.ShowDialog() == DialogResult.OK)
             {
                 byte[] program = File.ReadAllBytes(dlg.FileName);
+                cpu = new e6502();
                 cpu.LoadProgram(0x0000, program);
 
                 // this test program is supposed to start at 0x0400;
@@ -101,11 +102,7 @@ namespace e6502Debugger
                 flags += "V";
             else
                 flags += "-";
-            flags += "-";
-            if (cpu.BF)
-                flags += "B";
-            else
-                flags += "-";
+            flags += "--";
             if (cpu.DF)
                 flags += "D";
             else
@@ -147,22 +144,6 @@ namespace e6502Debugger
                     {
                         prev_pc = cpu.PC;
                         cpu.ExecuteNext();
-
-                        switch (prev_pc)
-                        {
-                            case 0x0434:
-                            case 0x0464:
-                            case 0x04a3:
-                            case 0x04de:
-                            case 0x05c8:
-                            case 0x05f8:
-                            case 0x0637:
-                            case 0x0672:
-                            case 0x06a0:
-                            case 0x06db:
-                                cpu.IRQWaiting = true;
-                                break;
-                        }
                     } while ( (cpu.PC != bp) && ( prev_pc != cpu.PC ));
 
                     if (prev_pc == cpu.PC)
@@ -170,49 +151,13 @@ namespace e6502Debugger
                 }
                 else
                 {
-                    prev_pc = cpu.PC;
                     cpu.ExecuteNext();
-
-                    switch (prev_pc)
-                    {
-                        case 0x0434:
-                        case 0x0464:
-                        case 0x04a3:
-                        case 0x04de:
-                        case 0x05c8:
-                        case 0x05f8:
-                        case 0x0637:
-                        case 0x0672:
-                        case 0x06a0:
-                        case 0x06db:
-                            cpu.IRQWaiting = true;
-                            break;
-                    }
                 }
             }
             else
             {
-                prev_pc = cpu.PC;
                 cpu.ExecuteNext();
-
-                switch (prev_pc)
-                {
-                    case 0x0434:
-                    case 0x0464:
-                    case 0x04a3:
-                    case 0x04de:
-                    case 0x05c8:
-                    case 0x05f8:
-                    case 0x0637:
-                    case 0x0672:
-                    case 0x06a0:
-                    case 0x06db:
-                        cpu.IRQWaiting = true;
-                        break;
-                }
             }
-
-
             UpdateScreen();
         }
 
@@ -270,30 +215,16 @@ namespace e6502Debugger
 
         private void btnRestart_Click(object sender, EventArgs e)
         {
-            LoadInterruptTestProgram();
             lblHalted.Visible = false;
+            cpu.Boot();
+            cpu.PC = 0x0400;
+            UpdateScreen();
         }
 
         private void btnRun_Click(object sender, EventArgs e)
         {
             ushort prev_pc;
             lblHalted.Visible = false;
-
-            switch (cpu.PC)
-            {
-                case 0x0434:
-                case 0x0464:
-                case 0x04a3:
-                case 0x04de:
-                case 0x05c8:
-                case 0x05f8:
-                case 0x0637:
-                case 0x0672:
-                case 0x06a0:
-                case 0x06db:
-                    cpu.IRQWaiting = true;
-                    break;
-            }
 
             do
             {
@@ -306,5 +237,6 @@ namespace e6502Debugger
 
             UpdateScreen();
         }
+
     }
 }
