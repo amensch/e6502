@@ -13,7 +13,7 @@ namespace e6502Tests
         public void RunInterruptTest()
         {
             /*
-             *  This loads a test program that tests interrupt handling in the 65C02.
+             *  This loads a test program that tests interrupt handling in the 6502.
              *  If the program gets to PC=$06ec then all tests passed.
              */
 

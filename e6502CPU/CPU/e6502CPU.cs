@@ -229,6 +229,10 @@ namespace e6502CPU
                 case 0x0e:
                 case 0x1e:
 
+                    // On 65C02 (abs,X) takes one less clock cycle (but still add back 1 if page boundary crossed)
+                    if (_currentOP.OpCode == 0x1e && _cpuType == e6502Type.CMOS)
+                        _extraCycles--;
+
                     // shift bit 7 into carry
                     CF = (oper >= 0x80);
 
@@ -245,6 +249,8 @@ namespace e6502CPU
 
                 // BBRx - test bit in memory (no flags)
                 // Test the zero page location and branch of the specified bit is clear
+                // These instructions are only available on Rockwell and WDC 65C02 chips.
+                // Number of clock cycles is the same regardless if the branch is taken.
                 case 0x0f:
                 case 0x1f:
                 case 0x2f:
@@ -273,6 +279,8 @@ namespace e6502CPU
 
                 // BBSx - test bit in memory (no flags)
                 // Test the zero page location and branch of the specified bit is set
+                // These instructions are only available on Rockwell and WDC 65C02 chips.
+                // Number of clock cycles is the same regardless if the branch is taken.
                 case 0x8f:
                 case 0x9f:
                 case 0xaf:
@@ -360,6 +368,8 @@ namespace e6502CPU
                     break;
 
                 // BRA - unconditional branch to immediate address
+                // NOTE: In OpcodeList.txt the number of clock cycles is one less than the documentation.
+                // This is because CheckBranch() adds one when a branch is taken, which in this case is always.
                 case 0x80:
                     PC += _currentOP.Bytes;
                     CheckBranch(true, oper);
@@ -378,7 +388,6 @@ namespace e6502CPU
 
                     // Whether or not the decimal flag is cleared depends on the type of 6502 CPU.
                     // The CMOS 65C02 clears this flag but the NMOS 6502 does not.
-
                     if( _cpuType == e6502Type.CMOS )
                         DF = false;
 
@@ -655,6 +664,10 @@ namespace e6502CPU
                 case 0x56:
                 case 0x5e:
 
+                    // On 65C02 (abs,X) takes one less clock cycle (but still add back 1 if page boundary crossed)
+                    if (_currentOP.OpCode == 0x5e && _cpuType == e6502Type.CMOS)
+                        _extraCycles--;
+
                     // shift bit 0 into carry
                     CF = ((oper & 0x01) == 0x01);
 
@@ -768,6 +781,7 @@ namespace e6502CPU
 
                 // RMBx - clear bit in memory (no flags)
                 // Clear the zero page location of the specified bit
+                // These instructions are only available on Rockwell and WDC 65C02 chips.
                 case 0x07:
                 case 0x17:
                 case 0x27:
@@ -791,6 +805,7 @@ namespace e6502CPU
 
                 // SMBx - set bit in memory (no flags)
                 // Set the zero page location of the specified bit
+                // These instructions are only available on Rockwell and WDC 65C02 chips.
                 case 0x87:
                 case 0x97:
                 case 0xa7:
@@ -819,6 +834,10 @@ namespace e6502CPU
                 case 0x36:
                 case 0x3e:
 
+                    // On 65C02 (abs,X) takes one less clock cycle (but still add back 1 if page boundary crossed)
+                    if (_currentOP.OpCode == 0x3e && _cpuType == e6502Type.CMOS)
+                        _extraCycles--;
+
                     // perserve existing cf value
                     bool old_cf = CF;
 
@@ -845,6 +864,10 @@ namespace e6502CPU
                 case 0x6e:
                 case 0x76:
                 case 0x7e:
+
+                    // On 65C02 (abs,X) takes one less clock cycle (but still add back 1 if page boundary crossed)
+                    if (_currentOP.OpCode == 0x7e && _cpuType == e6502Type.CMOS)
+                        _extraCycles--;
 
                     // perserve existing cf value
                     old_cf = CF;
@@ -1052,7 +1075,11 @@ namespace e6502CPU
                 // The original 6502 has undocumented and erratic behavior if
                 // undocumented op codes are invoked.  The 65C02 on the other hand
                 // are guaranteed to be NOPs although they vary in number of bytes
-                // and cycle counts.
+                // and cycle counts.  These NOPs are listed in the OpcodeList.txt file
+                // so the proper number of clock cycles are used.
+                //
+                // Instructions STP (0xdb) and WAI (0xcb) will reach this case.
+                // For now these are treated as a NOP.
                 default:
                     PC += _currentOP.Bytes;
                     break;
@@ -1382,6 +1409,10 @@ namespace e6502CPU
 
             // set interrupt disable flag
             IF = true;
+
+            // On 65C02, IRQ, NMI, and RESET also clear the D flag (but not on BRK) after pushing the status register.
+            if (_cpuType == e6502Type.CMOS && !isBRK)
+                DF = false;
 
             // load program counter with the interrupt vector
             PC = GetWordFromMemory(vector);

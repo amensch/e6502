@@ -13,7 +13,7 @@ namespace e6502Tests
         public void RunExtTestProgram()
         {
             /*
-             *  This loads a test program that exercises all the extended instructions of the 65C02.
+             *  This loads a test program that exercises all the extended instructions of the 65C02 (CMOS).
              *  If the program gets to PC=24a8 then all tests passed.
              */
 
