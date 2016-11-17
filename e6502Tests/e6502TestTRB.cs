@@ -10,7 +10,7 @@ namespace e6502Tests
         [TestMethod]
         public void TestTRB1()
         {
-            e6502 cpu = new e6502();
+            e6502 cpu = new e6502(e6502Type.CMOS);
             cpu.LoadProgram(0x00, new byte[] { 0xa9, 0xa6,      // LDA #$A6
                                                0x85, 0x00,      // STA $00
                                                0xa9, 0x33,      // LDA #$33
@@ -29,7 +29,7 @@ namespace e6502Tests
         [TestMethod]
         public void TestTRB2()
         {
-            e6502 cpu = new e6502();
+            e6502 cpu = new e6502(e6502Type.CMOS);
             cpu.LoadProgram(0x00, new byte[] { 0xa9, 0xa6,      // LDA #$A6
                                                0x85, 0x00,      // STA $00
                                                0xa9, 0x41,      // LDA #$41

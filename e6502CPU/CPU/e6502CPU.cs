@@ -6,6 +6,12 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 namespace e6502CPU
 {
+    public enum e6502Type
+    {
+        CMOS,
+        NMOS
+    };
+
     public class e6502
     {
         // Main Register
@@ -55,7 +61,9 @@ namespace e6502CPU
         // Flag for non maskable interrupt (NMI)
         public bool NMIWaiting { get; set; }
 
-        public e6502()
+        public e6502Type _cpuType { get; set; }
+
+        public e6502(e6502Type type)
         {
             memory = new byte[0x10000];
             _opCodeTable = new OpCodeTable();
@@ -75,6 +83,7 @@ namespace e6502CPU
             CF = false;
             NMIWaiting = false;
             IRQWaiting = false;
+            _cpuType = type;
         }
 
         public void Boot()
@@ -426,11 +435,8 @@ namespace e6502CPU
                     // Whether or not the decimal flag is cleared depends on the type of 6502 CPU.
                     // The CMOS 65C02 clears this flag but the NMOS 6502 does not.
 
-                    // For now this will default to not alter the decimal flag however eventually this
-                    // will need to be configurable based on CPU type.
-
-                    // The interrupt testing program included in the unit tests expects DF to be unaltered during a BRK.
-                    // DF = false;
+                    if( _cpuType == e6502Type.CMOS )
+                        DF = false;
 
                     break;
                 // BVC - branch on overflow clear

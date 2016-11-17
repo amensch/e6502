@@ -10,7 +10,7 @@ namespace e6502Tests
         [TestMethod]
         public void TestADC1()
         {
-            e6502 cpu = new e6502();
+            e6502 cpu = new e6502(e6502Type.CMOS);
             cpu.LoadProgram(0x00, new byte[] {  0x18,           // CLC
                                                 0xa9, 0x01,     // LDA #$01
                                                 0x69, 0x01 });  // ADC #$01
@@ -30,7 +30,7 @@ namespace e6502Tests
         [TestMethod]
         public void TestADC2()
         {
-            e6502 cpu = new e6502();
+            e6502 cpu = new e6502(e6502Type.CMOS);
             cpu.LoadProgram(0x00, new byte[] {  0x18,           // CLC
                                                 0xa9, 0x01,     // LDA #$01
                                                 0x69, 0xff });  // ADC #$ff
@@ -50,7 +50,7 @@ namespace e6502Tests
         [TestMethod]
         public void TestADC3()
         {
-            e6502 cpu = new e6502();
+            e6502 cpu = new e6502(e6502Type.CMOS);
             cpu.LoadProgram(0x00, new byte[] {  0x18,           // CLC
                                                 0xa9, 0x7f,     // LDA #$7f
                                                 0x69, 0x01 });  // ADC #$01
@@ -70,7 +70,7 @@ namespace e6502Tests
         [TestMethod]
         public void TestADC4()
         {
-            e6502 cpu = new e6502();
+            e6502 cpu = new e6502(e6502Type.CMOS);
             cpu.LoadProgram(0x00, new byte[] {  0x18,           // CLC
                                                 0xa9, 0x80,     // LDA #$80
                                                 0x69, 0xff });  // ADC #$ff
@@ -90,7 +90,7 @@ namespace e6502Tests
         [TestMethod]
         public void TestADC5()
         {
-            e6502 cpu = new e6502();
+            e6502 cpu = new e6502(e6502Type.CMOS);
             cpu.LoadProgram(0x00, new byte[] {  0x38,           // SEC
                                                 0xa9, 0x3f,     // LDA #$3F
                                                 0x69, 0x40 });  // ADC #$40
@@ -108,7 +108,7 @@ namespace e6502Tests
         [TestMethod]
         public void TestADC_BCD1()
         {
-            e6502 cpu = new e6502();
+            e6502 cpu = new e6502(e6502Type.CMOS);
             cpu.LoadProgram(0x00, new byte[] {  0xf8,           // SED
                                                 0xa9, 0x58,     // LDA #$58
                                                 0x69, 0x46 });  // ADC #$46
@@ -126,7 +126,7 @@ namespace e6502Tests
         [TestMethod]
         public void TestADC_BCD2()
         {
-            e6502 cpu = new e6502();
+            e6502 cpu = new e6502(e6502Type.CMOS);
             cpu.LoadProgram(0x00, new byte[] {  0xf8,           // SED
                                                 0x38,           // SEC
                                                 0xa9, 0x58,     // LDA #$58
@@ -146,7 +146,7 @@ namespace e6502Tests
         [TestMethod]
         public void TestADC_BCD3()
         {
-            e6502 cpu = new e6502();
+            e6502 cpu = new e6502(e6502Type.CMOS);
             cpu.LoadProgram(0x00, new byte[] {  0xf8,           // SED
                                                 0xa9, 0x15,     // LDA #$15
                                                 0x69, 0x26 });  // ADC #$26

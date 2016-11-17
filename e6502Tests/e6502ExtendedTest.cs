@@ -17,7 +17,7 @@ namespace e6502Tests
              *  If the program gets to PC=24a8 then all tests passed.
              */
 
-            e6502 cpu = new e6502();
+            e6502 cpu = new e6502(e6502Type.CMOS);
             cpu.LoadProgram(0x0000, File.ReadAllBytes(@"..\..\Resources\65C02_extended_opcodes_test.bin"));
             cpu.PC = 0x0400;
 

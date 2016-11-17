@@ -17,7 +17,7 @@ namespace e6502Tests
              *  If the program gets to PC=$06ec then all tests passed.
              */
 
-            e6502 cpu = new e6502();
+            e6502 cpu = new e6502(e6502Type.NMOS);
             cpu.LoadProgram(0x0400, File.ReadAllBytes(@"..\..\Resources\6502_interrupt_test.bin"));
             cpu.PC = 0x0400;
 
