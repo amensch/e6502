@@ -47,7 +47,6 @@ namespace e6502CPU
             bool rec_checkPageBoundary;
             bool rec_checkBranchPage;
 
-            // throw away the first two lines
             foreach( String line in oplist )
             {
                 if (line.Length > 40)
