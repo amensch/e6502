@@ -20,17 +20,10 @@ namespace e6502CPU
                 OpCodes[ii] = new OpCodeRecord();
             }
             CreateTable();
-
-            //foreach(var op in OpCodes)
-            //{
-            //    if (op.CheckBranchPage)
-            //        Debug.WriteLine(op.ToString());
-            //}
         }
 
         private void CreateTable()
         {
-            //string[] oplist = e6502CPU.Properties.Resources.OpcodeList.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
             OpCodeReader oplist = new OpCodeReader();
 
             string address;
@@ -47,7 +40,6 @@ namespace e6502CPU
             bool rec_checkPageBoundary;
             bool rec_checkBranchPage;
 
-            // throw away the first two lines
             foreach( String line in oplist )
             {
                 if (line.Length > 40)
