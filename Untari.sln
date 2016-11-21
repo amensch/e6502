@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "e6502Debugger", "e6502Debug
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "e6502Tests", "e6502Tests\e6502Tests.csproj", "{BBDA0D8A-0297-4185-A7D5-3B2DDE26D300}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "e6502", "e6502", "{69EA446F-47BB-43B6-ACD4-B3962A66D5AF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Untari", "Untari\Untari.csproj", "{D03708B8-06DD-4A92-8A7B-71E9DC2CF8D9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,8 +31,17 @@ Global
 		{BBDA0D8A-0297-4185-A7D5-3B2DDE26D300}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BBDA0D8A-0297-4185-A7D5-3B2DDE26D300}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BBDA0D8A-0297-4185-A7D5-3B2DDE26D300}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D03708B8-06DD-4A92-8A7B-71E9DC2CF8D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D03708B8-06DD-4A92-8A7B-71E9DC2CF8D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D03708B8-06DD-4A92-8A7B-71E9DC2CF8D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D03708B8-06DD-4A92-8A7B-71E9DC2CF8D9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{20DC9955-1EA3-412A-B42D-2CBECAAB9D96} = {69EA446F-47BB-43B6-ACD4-B3962A66D5AF}
+		{6219B602-E7F7-4A2A-B778-9378F62DE178} = {69EA446F-47BB-43B6-ACD4-B3962A66D5AF}
+		{BBDA0D8A-0297-4185-A7D5-3B2DDE26D300} = {69EA446F-47BB-43B6-ACD4-B3962A66D5AF}
 	EndGlobalSection
 EndGlobal
