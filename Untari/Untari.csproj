@@ -56,8 +56,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TIA\NTSCPalette.cs" />
     <Compile Include="TIA\PALPalette.cs" />
-    <Compile Include="TIA\SequentialInt.cs" />
     <Compile Include="TIA\TIA.cs" />
+    <Compile Include="TIA\TIAAddress.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
