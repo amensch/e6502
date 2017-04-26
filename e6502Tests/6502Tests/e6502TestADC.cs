@@ -10,8 +10,8 @@ namespace UntariTests
         [TestMethod]
         public void TestADC1()
         {
-            TestBus bus = new TestBus();
-            e6502 cpu = new e6502(e6502Type.CMOS, bus);
+            TestRAM ram = new TestRAM();
+            e6502 cpu = new e6502(e6502Type.CMOS, ram);
             cpu.LoadProgram(0x00, new byte[] {  0x18,           // CLC
                                                 0xa9, 0x01,     // LDA #$01
                                                 0x69, 0x01 });  // ADC #$01
@@ -31,8 +31,8 @@ namespace UntariTests
         [TestMethod]
         public void TestADC2()
         {
-            TestBus bus = new TestBus();
-            e6502 cpu = new e6502(e6502Type.CMOS, bus);
+            TestRAM ram = new TestRAM();
+            e6502 cpu = new e6502(e6502Type.CMOS, ram);
             cpu.LoadProgram(0x00, new byte[] {  0x18,           // CLC
                                                 0xa9, 0x01,     // LDA #$01
                                                 0x69, 0xff });  // ADC #$ff
@@ -52,8 +52,8 @@ namespace UntariTests
         [TestMethod]
         public void TestADC3()
         {
-            TestBus bus = new TestBus();
-            e6502 cpu = new e6502(e6502Type.CMOS, bus);
+            TestRAM ram = new TestRAM();
+            e6502 cpu = new e6502(e6502Type.CMOS, ram);
             cpu.LoadProgram(0x00, new byte[] {  0x18,           // CLC
                                                 0xa9, 0x7f,     // LDA #$7f
                                                 0x69, 0x01 });  // ADC #$01
@@ -73,8 +73,8 @@ namespace UntariTests
         [TestMethod]
         public void TestADC4()
         {
-            TestBus bus = new TestBus();
-            e6502 cpu = new e6502(e6502Type.CMOS, bus);
+            TestRAM ram = new TestRAM();
+            e6502 cpu = new e6502(e6502Type.CMOS, ram);
             cpu.LoadProgram(0x00, new byte[] {  0x18,           // CLC
                                                 0xa9, 0x80,     // LDA #$80
                                                 0x69, 0xff });  // ADC #$ff
@@ -94,8 +94,8 @@ namespace UntariTests
         [TestMethod]
         public void TestADC5()
         {
-            TestBus bus = new TestBus();
-            e6502 cpu = new e6502(e6502Type.CMOS, bus);
+            TestRAM ram = new TestRAM();
+            e6502 cpu = new e6502(e6502Type.CMOS, ram);
             cpu.LoadProgram(0x00, new byte[] {  0x38,           // SEC
                                                 0xa9, 0x3f,     // LDA #$3F
                                                 0x69, 0x40 });  // ADC #$40
@@ -113,8 +113,8 @@ namespace UntariTests
         [TestMethod]
         public void TestADC_BCD1()
         {
-            TestBus bus = new TestBus();
-            e6502 cpu = new e6502(e6502Type.CMOS, bus);
+            TestRAM ram = new TestRAM();
+            e6502 cpu = new e6502(e6502Type.CMOS, ram);
             cpu.LoadProgram(0x00, new byte[] {  0xf8,           // SED
                                                 0xa9, 0x58,     // LDA #$58
                                                 0x69, 0x46 });  // ADC #$46
@@ -132,8 +132,8 @@ namespace UntariTests
         [TestMethod]
         public void TestADC_BCD2()
         {
-            TestBus bus = new TestBus();
-            e6502 cpu = new e6502(e6502Type.CMOS, bus);
+            TestRAM ram = new TestRAM();
+            e6502 cpu = new e6502(e6502Type.CMOS, ram);
             cpu.LoadProgram(0x00, new byte[] {  0xf8,           // SED
                                                 0x38,           // SEC
                                                 0xa9, 0x58,     // LDA #$58
@@ -153,8 +153,8 @@ namespace UntariTests
         [TestMethod]
         public void TestADC_BCD3()
         {
-            TestBus bus = new TestBus();
-            e6502 cpu = new e6502(e6502Type.CMOS, bus);
+            TestRAM ram = new TestRAM();
+            e6502 cpu = new e6502(e6502Type.CMOS, ram);
             cpu.LoadProgram(0x00, new byte[] {  0xf8,           // SED
                                                 0xa9, 0x15,     // LDA #$15
                                                 0x69, 0x26 });  // ADC #$26

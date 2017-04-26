@@ -62,7 +62,7 @@
     <Compile Include="6502Tests\e6502TestTSB.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="6502Tests\e6502TestBBR.cs" />
-    <Compile Include="TestBus.cs" />
+    <Compile Include="TestRAM.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\6502_functional_test.bin" />

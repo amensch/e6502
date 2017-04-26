@@ -10,8 +10,8 @@ namespace UntariTests
         [TestMethod]
         public void TestTSB1()
         {
-            TestBus bus = new TestBus();
-            e6502 cpu = new e6502(e6502Type.CMOS, bus);
+            TestRAM ram = new TestRAM();
+            e6502 cpu = new e6502(e6502Type.CMOS, ram);
             cpu.LoadProgram(0x00, new byte[] { 0xa9, 0xa6,      // LDA #$A6
                                                0x85, 0x00,      // STA $00
                                                0xa9, 0x33,      // LDA #$33
@@ -22,7 +22,7 @@ namespace UntariTests
             cpu.ExecuteNext();
             cpu.ExecuteNext();
 
-            Assert.AreEqual(0xb7, bus.GetByte(0x0000), "TSB failed");
+            Assert.AreEqual(0xb7, ram.GetByte(0x0000), "TSB failed");
             Assert.AreEqual(0x33, cpu.A, "A failed");
             Assert.AreEqual(false, cpu.ZF, "ZF failed");               
         }
@@ -30,8 +30,8 @@ namespace UntariTests
         [TestMethod]
         public void TestTSB2()
         {
-            TestBus bus = new TestBus();
-            e6502 cpu = new e6502(e6502Type.CMOS, bus);
+            TestRAM ram = new TestRAM();
+            e6502 cpu = new e6502(e6502Type.CMOS, ram);
             cpu.LoadProgram(0x00, new byte[] { 0xa9, 0xa6,      // LDA #$A6
                                                0x85, 0x00,      // STA $00
                                                0xa9, 0x41,      // LDA #$41
@@ -42,7 +42,7 @@ namespace UntariTests
             cpu.ExecuteNext();
             cpu.ExecuteNext();
 
-            Assert.AreEqual(0xe7, bus.GetByte(0x0000), "TSB failed"); 
+            Assert.AreEqual(0xe7, ram.GetByte(0x0000), "TSB failed"); 
             Assert.AreEqual(0x41, cpu.A, "A failed");
             Assert.AreEqual(true, cpu.ZF, "ZF failed");             
         }

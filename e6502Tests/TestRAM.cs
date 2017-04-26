@@ -3,7 +3,7 @@ using Untari.Console;
 
 namespace UntariTests
 {
-    public class TestBus : IBus
+    public class TestRAM : IBus
     {
         private const int MAX_MEMORY_SIZE = 0x10000;
         private byte[] _memory = new byte[MAX_MEMORY_SIZE];

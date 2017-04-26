@@ -16,8 +16,8 @@ namespace UntariTests
              *  If the program gets to PC=$06ec then all tests passed.
              */
 
-            TestBus bus = new TestBus();
-            e6502 cpu = new e6502(e6502Type.NMOS, bus);
+            TestRAM ram = new TestRAM();
+            e6502 cpu = new e6502(e6502Type.NMOS, ram);
             cpu.LoadProgram(0x0400, File.ReadAllBytes(@"..\..\Resources\6502_interrupt_test.bin"));
             cpu.PC = 0x0400;
 

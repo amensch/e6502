@@ -17,8 +17,8 @@ namespace UntariTests
              *  If the program gets to PC=24a8 then all tests passed.
              */
 
-            TestBus bus = new TestBus();
-            e6502 cpu = new e6502(e6502Type.CMOS, bus);
+            TestRAM ram = new TestRAM();
+            e6502 cpu = new e6502(e6502Type.CMOS, ram);
             cpu.LoadProgram(0x0000, File.ReadAllBytes(@"..\..\Resources\65C02_extended_opcodes_test.bin"));
             cpu.PC = 0x0400;
 

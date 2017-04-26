@@ -10,7 +10,14 @@ namespace Untari.CPU
 
         public OpCodeReader()
         {
-            string[] orglist = Untari.Properties.Resources.OpcodeList.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+            string[] orglist;
+
+            orglist = Untari.Properties.Resources.OpcodeList.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+
+            // unix style termination on my other laptop... not sure why
+            if (orglist.GetUpperBound(0) < 2)
+                orglist = Untari.Properties.Resources.OpcodeList.Split(new char[] { '\n' }, StringSplitOptions.None);
+
             oplist = new List<string>();
 
             // Remove the first two entries as well as blank and null lines
