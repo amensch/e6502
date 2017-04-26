@@ -1,6 +1,6 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using e6502CPU;
+using Untari.CPU;
 using System.IO;
 using System.Diagnostics;
 
@@ -17,7 +17,8 @@ namespace e6502Tests
              *  If the program gets to PC=24a8 then all tests passed.
              */
 
-            e6502 cpu = new e6502(e6502Type.CMOS);
+            TestBus bus = new TestBus();
+            e6502 cpu = new e6502(e6502Type.CMOS, bus);
             cpu.LoadProgram(0x0000, File.ReadAllBytes(@"..\..\Resources\65C02_extended_opcodes_test.bin"));
             cpu.PC = 0x0400;
 

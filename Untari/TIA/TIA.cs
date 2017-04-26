@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using e6502CPU;
+using Untari.CPU;
 
 namespace Untari.TIA
 {

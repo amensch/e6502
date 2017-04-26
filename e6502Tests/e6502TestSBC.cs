@@ -1,6 +1,6 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using e6502CPU;
+using Untari.CPU;
 
 namespace e6502Tests
 {
@@ -10,7 +10,8 @@ namespace e6502Tests
         [TestMethod]
         public void TestSBC1()
         {
-            e6502 cpu = new e6502(e6502Type.CMOS);
+            TestBus bus = new TestBus();
+            e6502 cpu = new e6502(e6502Type.CMOS, bus);
             cpu.LoadProgram(0x00, new byte[] {  0x38,           // SEC
                                                 0xa9, 0x00,     // LDA #$00
                                                 0xe9, 0x01 });  // SBC #$01
@@ -30,7 +31,8 @@ namespace e6502Tests
         [TestMethod]
         public void TestSBC2()
         {
-            e6502 cpu = new e6502(e6502Type.CMOS);
+            TestBus bus = new TestBus();
+            e6502 cpu = new e6502(e6502Type.CMOS, bus);
             cpu.LoadProgram(0x00, new byte[] {  0x38,           // SEC
                                                 0xa9, 0x80,     // LDA #$80
                                                 0xe9, 0x01 });  // SBC #$01
@@ -50,7 +52,8 @@ namespace e6502Tests
         [TestMethod]
         public void TestSBC3()
         {
-            e6502 cpu = new e6502(e6502Type.CMOS);
+            TestBus bus = new TestBus();
+            e6502 cpu = new e6502(e6502Type.CMOS, bus);
             cpu.LoadProgram(0x00, new byte[] {  0x38,           // SEC
                                                 0xa9, 0x7f,     // LDA #$7F
                                                 0xe9, 0xff });  // SBC #$ff
@@ -69,7 +72,8 @@ namespace e6502Tests
         [TestMethod]
         public void TestSBC4()
         {
-            e6502 cpu = new e6502(e6502Type.CMOS);
+            TestBus bus = new TestBus();
+            e6502 cpu = new e6502(e6502Type.CMOS, bus);
             cpu.LoadProgram(0x00, new byte[] {  0x18,           // CLC
                                                 0xa9, 0xc0,     // LDA #$C0
                                                 0xe9, 0x40 });  // SBC #$40
@@ -88,7 +92,8 @@ namespace e6502Tests
         [TestMethod]
         public void TestSBC5()
         {
-            e6502 cpu = new e6502(e6502Type.CMOS);
+            TestBus bus = new TestBus();
+            e6502 cpu = new e6502(e6502Type.CMOS, bus);
             cpu.LoadProgram(0x00, new byte[] {  0xf8,           // SED
                                                 0x38,           // SEC
                                                 0xa9, 0x46,     // LDA #$46
@@ -106,7 +111,8 @@ namespace e6502Tests
         [TestMethod]
         public void TestSBC6()
         {
-            e6502 cpu = new e6502(e6502Type.CMOS);
+            TestBus bus = new TestBus();
+            e6502 cpu = new e6502(e6502Type.CMOS, bus);
             cpu.LoadProgram(0x00, new byte[] {  0xf8,           // SED
                                                 0x38,           // SEC
                                                 0xa9, 0x12,     // LDA #$12
