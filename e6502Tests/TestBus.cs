@@ -1,7 +1,7 @@
 ﻿using System;
 using Untari.Console;
 
-namespace e6502Tests
+namespace UntariTests
 {
     public class TestBus : IBus
     {

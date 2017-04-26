@@ -2,7 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Untari.CPU;
 
-namespace e6502Tests
+namespace UntariTests
 {
     [TestClass]
     public class e6502TestADC

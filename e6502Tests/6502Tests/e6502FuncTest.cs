@@ -1,25 +1,24 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Untari.CPU;
 using System.IO;
 using System.Diagnostics;
 
-namespace e6502Tests
+namespace UntariTests
 {
     [TestClass]
-    public class e6502ExtendedTest
+    public class e6502FuncTest
     {
         [TestMethod]
-        public void RunExtTestProgram()
+        public void RunFuncTestProgram()
         {
             /*
-             *  This loads a test program that exercises all the extended instructions of the 65C02 (CMOS).
-             *  If the program gets to PC=24a8 then all tests passed.
+             *  This loads a test program that exercises all the standard instructions of the 6502.
+             *  If the program gets to PC=$3399 then all tests passed.
              */
 
             TestBus bus = new TestBus();
-            e6502 cpu = new e6502(e6502Type.CMOS, bus);
-            cpu.LoadProgram(0x0000, File.ReadAllBytes(@"..\..\Resources\65C02_extended_opcodes_test.bin"));
+            e6502 cpu = new e6502(e6502Type.NMOS, bus);
+            cpu.LoadProgram(0x0000, File.ReadAllBytes(@"..\..\Resources\6502_functional_test.bin"));
             cpu.PC = 0x0400;
 
             ushort prev_pc;
@@ -43,7 +42,7 @@ namespace e6502Tests
             double mhz = (cycle_count / sw.ElapsedMilliseconds) / 1000;
             Debug.WriteLine("Effective Mhz: " + mhz.ToString("N1"));
 
-            Assert.AreEqual(0x24a8, cpu.PC, "Test program failed at $" + cpu.PC.ToString("X4"));
+            Assert.AreEqual(0x3399, cpu.PC, "Test program failed at $" + cpu.PC.ToString("X4"));
         }
     }
 }

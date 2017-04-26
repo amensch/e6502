@@ -3,7 +3,7 @@ using Untari.CPU;
 using System.IO;
 using System.Diagnostics;
 
-namespace e6502Tests
+namespace UntariTests
 {
     [TestClass]
     public class e6502InterruptTest

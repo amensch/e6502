@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "e6502Tests", "e6502Tests\e6502Tests.csproj", "{BBDA0D8A-0297-4185-A7D5-3B2DDE26D300}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UntariTests", "e6502Tests\UntariTests.csproj", "{BBDA0D8A-0297-4185-A7D5-3B2DDE26D300}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Untari", "Untari\Untari.csproj", "{D03708B8-06DD-4A92-8A7B-71E9DC2CF8D9}"
 EndProject
