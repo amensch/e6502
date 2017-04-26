@@ -59,32 +59,32 @@ namespace Untari.TIA
         /// </summary>
         public void Tick()
         {
-            // if WSYNC has a value clear the RDY signal in the CPU
-            if (cpu.memory[TIAAddress.WSYNC] > 0)
-            {
-                cpu.RDY = false;
+            //// if WSYNC has a value clear the RDY signal in the CPU
+            //if (cpu.memory[TIAAddress.WSYNC] > 0)
+            //{
+            //    cpu.RDY = false;
 
-                // this doesn't happen in reality
-                cpu.memory[TIAAddress.WSYNC] = 0;
-            }
+            //    // this doesn't happen in reality
+            //    cpu.memory[TIAAddress.WSYNC] = 0;
+            //}
 
-            h_line++;
-            if (h_line > HMAX)
-            {
+            //h_line++;
+            //if (h_line > HMAX)
+            //{
 
-                h_line = 1;
-                v_line++;
+            //    h_line = 1;
+            //    v_line++;
                 
-                // new line, re-enable the RDY signal
-                cpu.RDY = true;
+            //    // new line, re-enable the RDY signal
+            //    cpu.RDY = true;
 
-                // New screen starting
-                if (v_line > VMAX)
-                {
-                    v_line = 1;
-                }
-            }
-            Draw();
+            //    // New screen starting
+            //    if (v_line > VMAX)
+            //    {
+            //        v_line = 1;
+            //    }
+            //}
+            //Draw();
         }
 
         /// <summary>
@@ -122,7 +122,7 @@ namespace Untari.TIA
             {
                 setbit = setbit << 1;
             }
-            cpu.memory[address] = (byte)(cpu.memory[address] | setbit);
+            //cpu.memory[address] = (byte)(cpu.memory[address] | setbit);
         }
 
         private void ClearBit(int address, int bitnum)
@@ -132,7 +132,7 @@ namespace Untari.TIA
             {
                 clearbit = clearbit << 1;
             }
-            cpu.memory[address] = (byte)(cpu.memory[address] & ~clearbit);
+            //cpu.memory[address] = (byte)(cpu.memory[address] & ~clearbit);
         }
 
     }

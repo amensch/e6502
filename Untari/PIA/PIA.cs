@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using e6502CPU;
+using Untari.CPU;
 
 namespace Untari.PIA
 {
@@ -41,11 +41,11 @@ namespace Untari.PIA
             _cpu = cpu;
 
             // zero out the registers used
-            _cpu.memory[PIAAddress.INTIM] = 0;
-            _cpu.memory[PIAAddress.TIM1T] = 0;
-            _cpu.memory[PIAAddress.TIM8T] = 0;
-            _cpu.memory[PIAAddress.TIM64T] = 0;
-            _cpu.memory[PIAAddress.T1024T] = 0;
+            //_cpu.memory[PIAAddress.INTIM] = 0;
+            //_cpu.memory[PIAAddress.TIM1T] = 0;
+            //_cpu.memory[PIAAddress.TIM8T] = 0;
+            //_cpu.memory[PIAAddress.TIM64T] = 0;
+            //_cpu.memory[PIAAddress.T1024T] = 0;
 
             _interval = 0;
             _interval_count = 0;
@@ -67,31 +67,31 @@ namespace Untari.PIA
             
 
 
-            // check if a timer register has been written to
-            if( _cpu.memory[PIAAddress.TIM1T] != 0 )
-            {
-                StartTimer(_cpu.memory[PIAAddress.TIM1T], 1);
-            }
-            else if(_cpu.memory[PIAAddress.TIM8T] != 0)
-            {
-                StartTimer(_cpu.memory[PIAAddress.TIM8T], 8);
-            }
-            else if(_cpu.memory[PIAAddress.TIM64T] != 0)
-            {
-                StartTimer(_cpu.memory[PIAAddress.TIM64T], 64);
-            }
-            else if(_cpu.memory[PIAAddress.T1024T] != 0)
-            {
-                StartTimer(_cpu.memory[PIAAddress.T1024T], 1024);
-            }
+            //// check if a timer register has been written to
+            //if( _cpu.memory[PIAAddress.TIM1T] != 0 )
+            //{
+            //    StartTimer(_cpu.memory[PIAAddress.TIM1T], 1);
+            //}
+            //else if(_cpu.memory[PIAAddress.TIM8T] != 0)
+            //{
+            //    StartTimer(_cpu.memory[PIAAddress.TIM8T], 8);
+            //}
+            //else if(_cpu.memory[PIAAddress.TIM64T] != 0)
+            //{
+            //    StartTimer(_cpu.memory[PIAAddress.TIM64T], 64);
+            //}
+            //else if(_cpu.memory[PIAAddress.T1024T] != 0)
+            //{
+            //    StartTimer(_cpu.memory[PIAAddress.T1024T], 1024);
+            //}
 
 
         }
 
         private void StartTimer(int address, int interval)
         {
-            _cpu.memory[PIAAddress.INTIM] = _cpu.memory[address];
-            _cpu.memory[address] = 0;
+            //_cpu.memory[PIAAddress.INTIM] = _cpu.memory[address];
+            //_cpu.memory[address] = 0;
             _interval = interval;
             _interval_count = 0;
         }
