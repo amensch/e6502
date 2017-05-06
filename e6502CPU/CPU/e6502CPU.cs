@@ -1101,7 +1101,7 @@ namespace e6502CPU
 
                     if (_currentOP.CheckPageBoundary)
                     {
-                        if ((imm & 0xff00) != (result & 0xff00)) _extraCycles = 1;
+                        if ((imm & 0xff00) != (result & 0xff00)) _extraCycles += 1;
                     }
                     oper = memory[ result ];
                     break;
@@ -1111,7 +1111,7 @@ namespace e6502CPU
 
                     if (_currentOP.CheckPageBoundary)
                     {
-                        if ((imm & 0xff00) != (result & 0xff00)) _extraCycles = 1;
+                        if ((imm & 0xff00) != (result & 0xff00)) _extraCycles += 1;
                     }
                     oper = memory[result]; break;
 
