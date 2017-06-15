@@ -1,3 +1,3 @@
-# e6502
+# Untari
 
-This is a fully implemented Motorola 6502 emulation written in C#.  
+Began with a branch from the e6502 project.  A slow WIP of an Atari 2600 emulator. 
