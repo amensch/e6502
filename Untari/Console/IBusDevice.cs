@@ -6,10 +6,9 @@ using System.Threading.Tasks;
 
 namespace Untari
 {
-    public interface IBus
+    public interface IBusDevice
     {
         byte GetByte(int address);
         void WriteByte(int address, byte data);
-        void LoadProgram(ushort startingAddress, byte[] program);
     }
 }
