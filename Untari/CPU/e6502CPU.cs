@@ -1098,7 +1098,7 @@ namespace Untari.CPU
 
                     if (_currentOP.CheckPageBoundary)
                     {
-                        if ((imm & 0xff00) != (result & 0xff00)) _extraCycles = 1;
+                        if ((imm & 0xff00) != (result & 0xff00)) _extraCycles++;
                     }
                     oper = _bus.GetByte(result);
                     break;
@@ -1108,7 +1108,7 @@ namespace Untari.CPU
 
                     if (_currentOP.CheckPageBoundary)
                     {
-                        if ((imm & 0xff00) != (result & 0xff00)) _extraCycles = 1;
+                        if ((imm & 0xff00) != (result & 0xff00)) _extraCycles++;
                     }
                     oper = _bus.GetByte(result); break;
 
