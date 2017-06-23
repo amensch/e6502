@@ -1157,12 +1157,13 @@ namespace e6502CPU
                         3)Load the byte at this address
                     */
 
-                    oper = memory[GetWordFromMemory(GetImmByte()) + Y];
+                    ushort addr = GetWordFromMemory(GetImmByte());
+                    oper = memory[addr + Y];
 
-                    //if (_currentOP.CheckPageBoundary)
-                    //{
-                    //    if (addr == 0xff) _extraCycles = 1;
-                    //}
+                    if (_currentOP.CheckPageBoundary)
+                    {
+                        if ((oper & 0xff00) != (addr & 0xff00)) _extraCycles++;
+                    }
                     break;
 
 
