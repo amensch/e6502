@@ -58,6 +58,9 @@ namespace e6502CPU
         // Flag for non maskable interrupt (NMI)
         public bool NMIWaiting { get; set; }
 
+        // Ready I/O Pin (no instructions are executed when cleared)
+        public bool RDY { get; set; }
+
         public e6502Type _cpuType { get; set; }
 
         public e6502(e6502Type type)
@@ -95,12 +98,14 @@ namespace e6502CPU
 
             NMIWaiting = false;
             IRQWaiting = false;
+            RDY = true;
         }
 
         public void LoadProgram(ushort startingAddress, byte[] program)
         {
             program.CopyTo(memory, startingAddress);
             PC = startingAddress;
+            RDY = true;
         }
 
         public string DasmNextInstruction()
@@ -117,29 +122,37 @@ namespace e6502CPU
         {
             _extraCycles = 0;
 
-            // Check for non maskable interrupt (has higher priority over IRQ)
-            if (NMIWaiting)
+            if (RDY)
             {
-                DoIRQ(0xfffa);
-                NMIWaiting = false;
-                _extraCycles += 6;
-            }
-            // Check for hardware interrupt, if enabled
-            else if (!IF)
-            {
-                if(IRQWaiting)
+
+                // Check for non maskable interrupt (has higher priority over IRQ)
+                if (NMIWaiting)
                 {
-                    DoIRQ(0xfffe);
-                    IRQWaiting = false;
+                    DoIRQ(0xfffa);
+                    NMIWaiting = false;
                     _extraCycles += 6;
                 }
+                // Check for hardware interrupt, if enabled
+                else if (!IF)
+                {
+                    if (IRQWaiting)
+                    {
+                        DoIRQ(0xfffe);
+                        IRQWaiting = false;
+                        _extraCycles += 6;
+                    }
+                }
+
+                _currentOP = _opCodeTable.OpCodes[memory[PC]];
+
+                ExecuteInstruction();
+
+                return _currentOP.Cycles + _extraCycles;
             }
-
-            _currentOP = _opCodeTable.OpCodes[memory[PC]];
-
-            ExecuteInstruction();
-
-            return _currentOP.Cycles + _extraCycles;
+            else
+            {
+                return 0;
+            }
         }
 
         private void ExecuteInstruction()
@@ -1157,12 +1170,13 @@ namespace e6502CPU
                         3)Load the byte at this address
                     */
 
-                    oper = memory[GetWordFromMemory(GetImmByte()) + Y];
+                    ushort addr = GetWordFromMemory(GetImmByte());
+                    oper = memory[addr + Y];
 
-                    //if (_currentOP.CheckPageBoundary)
-                    //{
-                    //    if (addr == 0xff) _extraCycles = 1;
-                    //}
+                    if (_currentOP.CheckPageBoundary)
+                    {
+                        if ((oper & 0xff00) != (addr & 0xff00)) _extraCycles++;
+                    }
                     break;
 
 
