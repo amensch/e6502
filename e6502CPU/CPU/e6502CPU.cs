@@ -1,9 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Diagnostics;
+﻿/*
+ * e6502: A complete 6502 CPU emulator.
+ * Copyright 2016 Adam Mensch
+ */
+
+using System;
+
 namespace e6502CPU
 {
     public enum e6502Type

@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
+﻿/*
+ * e6502: A complete 6502 CPU emulator.
+ * Copyright 2016 Adam Mensch
+ */
+
+using System;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 using e6502CPU;
