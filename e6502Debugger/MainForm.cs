@@ -23,6 +23,7 @@ namespace e6502Debugger
             InitializeComponent();
             ClearScreen();
             //LoadInterruptTestProgram();
+            LoadKernelProgram();
         }
 
         private void ClearScreen()
@@ -36,6 +37,15 @@ namespace e6502Debugger
             lstMemory.Items.Clear();
             lstPC.Items.Clear();
             txtBreakPoint.Text = "";
+        }
+
+        // This is here for easy loading while I am debugging.
+        private void LoadKernelProgram()
+        {
+            cpu = new e6502( e6502Type.NMOS );
+            cpu.LoadProgram( 0xf000, File.ReadAllBytes( @"..\..\..\e6502Tests\Resources\kernel_01.bin" ) );
+            //cpu.PC = 0xf000;
+            UpdateScreen();
         }
 
         // This is here for easy loading while I am debugging.
