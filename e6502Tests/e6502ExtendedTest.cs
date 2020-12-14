@@ -1,10 +1,10 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using e6502CPU;
+using KDS.e6502CPU;
 using System.IO;
 using System.Diagnostics;
 
-namespace e6502Tests
+namespace KDS.e6502Tests
 {
     [TestClass]
     public class e6502ExtendedTest

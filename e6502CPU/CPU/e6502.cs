@@ -5,7 +5,7 @@
 
 using System;
 
-namespace e6502CPU
+namespace KDS.e6502CPU
 {
     public enum e6502Type
     {
@@ -16,55 +16,55 @@ namespace e6502CPU
     public class e6502
     {
         // Main Register
-        public byte A;
+        public byte A { get; internal set; }
 
         // Index Registers
-        public byte X;
-        public byte Y;
+        public byte X { get; internal set; }
+        public byte Y { get; internal set; }
 
         // Program Counter
-        public ushort PC;
+        public ushort PC { get; internal set; }
 
         // Stack Pointer
         // Memory location is hard coded to 0x01xx
         // Stack is descending (decrement on push, increment on pop)
         // 6502 is an empty stack so SP points to where next value is stored
-        public byte SP;
+        public byte SP { get; internal set; }
 
         // Status Registers (in order bit 7 to 0)
-        public bool NF;    // negative flag (N)
-        public bool VF;    // overflow flag (V)
-                           // bit 5 is unused
-                           // bit 4 is the break flag however it is not a physical flag in the CPU
-        public bool DF;    // binary coded decimal flag (D)
-        public bool IF;    // interrupt flag (I)
-        public bool ZF;    // zero flag (Z)
-        public bool CF;    // carry flag (C)
-
-        // RAM - 16 bit address bus means 64KB of addressable memory
-        public byte[] memory;
-
-        // List of op codes and their attributes
-        private OpCodeTable _opCodeTable;
-
-        // The current opcode
-        private OpCodeRecord _currentOP;
-
-        // Clock cycles to adjust due to page boundaries being crossed, branches taken, or NMOS/CMOS differences
-        private int _extraCycles;
+        public bool NF { get; internal set; }    // negative flag (N)
+        public bool VF { get; internal set; }    // overflow flag (V)
+                                        // bit 5 is unused
+                                        // bit 4 is the break flag however it is not a physical flag in the CPU
+        public bool DF { get; internal set; }    // binary coded decimal flag (D)
+        public bool IF { get; internal set; }    // interrupt flag (I)
+        public bool ZF { get; internal set; }    // zero flag (Z)
+        public bool CF { get; internal set; }    // carry flag (C)
 
         // Flag for hardware interrupt (IRQ)
-        public bool IRQWaiting { get; set; }
+        public bool IRQWaiting { get; internal set; }
 
         // Flag for non maskable interrupt (NMI)
-        public bool NMIWaiting { get; set; }
+        public bool NMIWaiting { get; internal set; }
 
-        public e6502Type _cpuType { get; set; }
+        // List of op codes and their attributes
+        private OpCodeTable opCodeTable;
 
-        public e6502(e6502Type type)
+        // The current opcode
+        private OpCodeRecord currentOp;
+
+        // Clock cycles to adjust due to page boundaries being crossed, branches taken, or NMOS/CMOS differences
+        private int ExtraCycles;
+
+        private e6502Type CPUType;
+
+        private BusDevice SystemBus;
+
+        public e6502(BusDevice bus) : this(bus, e6502Type.NMOS) { }
+
+        public e6502(BusDevice bus, e6502Type cpuType)
         {
-            memory = new byte[0x10000];
-            _opCodeTable = new OpCodeTable();
+            opCodeTable = new OpCodeTable();
 
             // Set these on instantiation so they are known values when using this object in testing.
             // Real programs should explicitly load these values before using them.
@@ -81,7 +81,8 @@ namespace e6502CPU
             CF = false;
             NMIWaiting = false;
             IRQWaiting = false;
-            _cpuType = type;
+            CPUType = cpuType;
+            SystemBus = bus;
         }
 
         public void Boot()
@@ -89,24 +90,20 @@ namespace e6502CPU
             // On reset the addresses 0xfffc and 0xfffd are read and PC is loaded with this value.
             // It is expected that the initial program loaded will have these values set to something.
             // Most 6502 systems contain ROM in the upper region (around 0xe000-0xffff)
-            PC = GetWordFromMemory(0xfffc);
+            Boot(SystemBus.ReadWord(0xfffc));
+        }
 
-            // interrupt disabled is set on powerup
+        public void Boot(ushort pc)
+        {
+            PC = pc;
             IF = true;
-
             NMIWaiting = false;
             IRQWaiting = false;
         }
 
-        public void LoadProgram(ushort startingAddress, byte[] program)
-        {
-            program.CopyTo(memory, startingAddress);
-            PC = startingAddress;
-        }
-
         public string DasmNextInstruction()
         {
-            OpCodeRecord oprec = _opCodeTable.OpCodes[ memory[PC] ];
+            OpCodeRecord oprec = opCodeTable.OpCodes[ SystemBus.Read(PC) ];
             if (oprec.Bytes == 3)
                 return oprec.Dasm( GetImmWord() );
             else
@@ -116,14 +113,14 @@ namespace e6502CPU
         // returns # of clock cycles needed to execute the instruction
         public int ExecuteNext()
         {
-            _extraCycles = 0;
+            ExtraCycles = 0;
 
             // Check for non maskable interrupt (has higher priority over IRQ)
             if (NMIWaiting)
             {
                 DoIRQ(0xfffa);
                 NMIWaiting = false;
-                _extraCycles += 6;
+                ExtraCycles += 6;
             }
             // Check for hardware interrupt, if enabled
             else if (!IF)
@@ -132,23 +129,23 @@ namespace e6502CPU
                 {
                     DoIRQ(0xfffe);
                     IRQWaiting = false;
-                    _extraCycles += 6;
+                    ExtraCycles += 6;
                 }
             }
 
-            _currentOP = _opCodeTable.OpCodes[memory[PC]];
+            currentOp = opCodeTable.OpCodes[SystemBus.Read(PC)];
 
             ExecuteInstruction();
 
-            return _currentOP.Cycles + _extraCycles;
+            return currentOp.Cycles + ExtraCycles;
         }
 
         private void ExecuteInstruction()
         {
             int result;
-            int oper = GetOperand(_currentOP.AddressMode);
+            int oper = GetOperand(currentOp.AddressMode);
 
-            switch (_currentOP.OpCode)
+            switch (currentOp.OpCode)
             {
                 // ADC - add memory to accumulator with carry
                 // A+M+C -> A,C (NZCV)
@@ -183,14 +180,14 @@ namespace e6502CPU
                         NF = (A > 0x7f);
 
                         // extra clock cycle on CMOS in decimal mode
-                        if (_cpuType == e6502Type.CMOS)
-                            _extraCycles++;
+                        if (CPUType == e6502Type.CMOS)
+                            ExtraCycles++;
                     }
                     else
                     {
                         ADC((byte)oper);
                     }
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // AND - and memory with accumulator
@@ -210,7 +207,7 @@ namespace e6502CPU
                     ZF = ((result & 0xff) == 0x00);
 
                     A = (byte)result;
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // ASL - shift left one bit (NZC)
@@ -223,8 +220,8 @@ namespace e6502CPU
                 case 0x1e:
 
                     // On 65C02 (abs,X) takes one less clock cycle (but still add back 1 if page boundary crossed)
-                    if (_currentOP.OpCode == 0x1e && _cpuType == e6502Type.CMOS)
-                        _extraCycles--;
+                    if (currentOp.OpCode == 0x1e && CPUType == e6502Type.CMOS)
+                        ExtraCycles--;
 
                     // shift bit 7 into carry
                     CF = (oper >= 0x80);
@@ -235,8 +232,8 @@ namespace e6502CPU
                     NF = ((result & 0x80) == 0x80);
                     ZF = ((result & 0xff) == 0x00);
 
-                    SaveOperand(_currentOP.AddressMode, result);
-                    PC += _currentOP.Bytes;
+                    SaveOperand(currentOp.AddressMode, result);
+                    PC += currentOp.Bytes;
 
                     break;
 
@@ -254,7 +251,7 @@ namespace e6502CPU
                 case 0x7f:
 
                     // upper nibble specifies the bit to check
-                    byte check_bit = (byte)(_currentOP.OpCode >> 4);
+                    byte check_bit = (byte)(currentOp.OpCode >> 4);
                     byte check_value = 0x01;
                     for( int ii=0; ii < check_bit; ii++)
                     {
@@ -262,8 +259,8 @@ namespace e6502CPU
                     }
 
                     // if the specified bit is 0 then branch
-                    byte offset = memory[PC + 2];
-                    PC += _currentOP.Bytes;
+                    byte offset = SystemBus.Read(PC + 2);
+                    PC += currentOp.Bytes;
 
                     if ((oper & check_value) == 0x00)
                         PC += offset;
@@ -284,7 +281,7 @@ namespace e6502CPU
                 case 0xff:
 
                     // upper nibble specifies the bit to check (but ignore bit 7)
-                    check_bit = (byte)((_currentOP.OpCode & 0x70) >> 4);
+                    check_bit = (byte)((currentOp.OpCode & 0x70) >> 4);
                     check_value = 0x01;
                     for (int ii = 0; ii < check_bit; ii++)
                     {
@@ -292,8 +289,8 @@ namespace e6502CPU
                     }
 
                     // if the specified bit is 1 then branch
-                    offset = memory[PC + 2];
-                    PC += _currentOP.Bytes;
+                    offset = SystemBus.Read(PC + 2];
+                    PC += currentOp.Bytes;
 
                     if ((oper & check_value) == check_value)
                         PC += offset;
@@ -302,19 +299,19 @@ namespace e6502CPU
 
                 // BCC - branch on carry clear
                 case 0x90:
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     CheckBranch(!CF, oper);
                     break;
 
                 // BCS - branch on carry set
                 case 0xb0:
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     CheckBranch(CF, oper);
                     break;
 
                 // BEQ - branch on zero
                 case 0xf0:
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     CheckBranch(ZF, oper);
                     break;
 
@@ -331,7 +328,7 @@ namespace e6502CPU
 
                     // The WDC programming manual for 65C02 indicates NV are unaffected in immediate mode.
                     // The extended op code test program reflects this.
-                    if (_currentOP.AddressMode != AddressModes.Immediate)
+                    if (currentOp.AddressMode != AddressModes.Immediate)
                     {
                         NF = ((oper & 0x80) == 0x80);
                         VF = ((oper & 0x40) == 0x40);
@@ -339,24 +336,24 @@ namespace e6502CPU
 
                     ZF = ((result & 0xff) == 0x00);
 
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // BMI - branch on negative
                 case 0x30:
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     CheckBranch(NF, oper);
                     break;
 
                 // BNE - branch on non zero
                 case 0xd0:
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     CheckBranch(!ZF, oper);
                     break;
 
                 // BPL - branch on non negative
                 case 0x10:
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     CheckBranch(!NF, oper);
                     break;
 
@@ -364,7 +361,7 @@ namespace e6502CPU
                 // NOTE: In OpcodeList.txt the number of clock cycles is one less than the documentation.
                 // This is because CheckBranch() adds one when a branch is taken, which in this case is always.
                 case 0x80:
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     CheckBranch(true, oper);
                     break;
 
@@ -381,44 +378,44 @@ namespace e6502CPU
 
                     // Whether or not the decimal flag is cleared depends on the type of 6502 CPU.
                     // The CMOS 65C02 clears this flag but the NMOS 6502 does not.
-                    if( _cpuType == e6502Type.CMOS )
+                    if( CPUType == e6502Type.CMOS )
                         DF = false;
 
                     break;
                 // BVC - branch on overflow clear
                 case 0x50:
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     CheckBranch(!VF, oper);
                     break;
 
                 // BVS - branch on overflow set
                 case 0x70:
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     CheckBranch(VF, oper);
                     break;
 
                 // CLC - clear carry flag
                 case 0x18:
                     CF = false;
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // CLD - clear decimal mode
                 case 0xd8:
                     DF = false;
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // CLI - clear interrupt disable bit
                 case 0x58:
                     IF = false;
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // CLV - clear overflow flag
                 case 0xb8:
                     VF = false;
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // CMP - compare memory with accumulator (NZC)
@@ -439,7 +436,7 @@ namespace e6502CPU
                     ZF = A == (byte)oper;
                     NF = ((temp & 0x80) == 0x80);
 
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // CPX - compare memory and X (NZC)
@@ -452,7 +449,7 @@ namespace e6502CPU
                     ZF = X == (byte)oper;
                     NF = ((temp & 0x80) == 0x80);
 
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // CPY - compare memory and Y (NZC)
@@ -465,7 +462,7 @@ namespace e6502CPU
                     ZF = Y == (byte)oper;
                     NF = ((temp & 0x80) == 0x80);
 
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // DEC - decrement memory by 1 (NZ)
@@ -480,9 +477,9 @@ namespace e6502CPU
                     ZF = ((result & 0xff) == 0x00);
                     NF = ((result & 0x80) == 0x80);
 
-                    SaveOperand(_currentOP.AddressMode, result);
+                    SaveOperand(currentOp.AddressMode, result);
 
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // DEX - decrement X by one (NZ)
@@ -493,7 +490,7 @@ namespace e6502CPU
                     NF = ((result & 0x80) == 0x80);
 
                     X = (byte)result;
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // DEY - decrement Y by one (NZ)
@@ -504,7 +501,7 @@ namespace e6502CPU
                     NF = ((result & 0x80) == 0x80);
 
                     Y = (byte)result;
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // EOR - XOR memory with accumulator (NZ)
@@ -524,7 +521,7 @@ namespace e6502CPU
 
                     A = (byte)result;
 
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // INC - increment memory by 1 (NZ)
@@ -539,9 +536,9 @@ namespace e6502CPU
                     ZF = ((result & 0xff) == 0x00);
                     NF = ((result & 0x80) == 0x80);
 
-                    SaveOperand(_currentOP.AddressMode, result);
+                    SaveOperand(currentOp.AddressMode, result);
 
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // INX - increment X by one (NZ)
@@ -552,7 +549,7 @@ namespace e6502CPU
                     NF = ((result & 0x80) == 0x80);
 
                     X = (byte)result;
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // INY - increment Y by one (NZ)
@@ -563,7 +560,7 @@ namespace e6502CPU
                     NF = ((result & 0x80) == 0x80);
 
                     Y = (byte)result;
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // JMP - jump to new location (two byte immediate)
@@ -572,17 +569,17 @@ namespace e6502CPU
                 // added for 65C02
                 case 0x7c:
 
-                    if (_currentOP.AddressMode == AddressModes.Absolute)
+                    if (currentOp.AddressMode == AddressModes.Absolute)
                     {
                         PC = GetImmWord();
                     }
-                    else if (_currentOP.AddressMode == AddressModes.Indirect)
+                    else if (currentOp.AddressMode == AddressModes.Indirect)
                     {
-                        PC = (ushort)(GetWordFromMemory(GetImmWord()));
+                        PC = (ushort)(SystemBus.ReadWord(GetImmWord()));
                     }
-                    else if( _currentOP.AddressMode == AddressModes.AbsoluteX)
+                    else if( currentOp.AddressMode == AddressModes.AbsoluteX)
                     {
-                        PC = GetWordFromMemory((GetImmWord() + X));
+                        PC = SystemBus.ReadWord((GetImmWord() + X));
                     }
                     else
                     {
@@ -590,8 +587,8 @@ namespace e6502CPU
                     }
 
                     // CMOS fixes a bug in this op code which results in an extra clock cycle
-                    if (_currentOP.OpCode == 0x6c && _cpuType == e6502Type.CMOS)
-                        _extraCycles++;
+                    if (currentOp.OpCode == 0x6c && CPUType == e6502Type.CMOS)
+                        ExtraCycles++;
                     break;
 
                 // JSR - jump to new location and save return address
@@ -617,7 +614,7 @@ namespace e6502CPU
                     ZF = ((A & 0xff) == 0x00);
                     NF = ((A & 0x80) == 0x80);
 
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // LDX - load index X with memory (NZ)
@@ -631,7 +628,7 @@ namespace e6502CPU
                     ZF = ((X & 0xff) == 0x00);
                     NF = ((X & 0x80) == 0x80);
 
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // LDY - load index Y with memory (NZ)
@@ -645,7 +642,7 @@ namespace e6502CPU
                     ZF = ((Y & 0xff) == 0x00);
                     NF = ((Y & 0x80) == 0x80);
 
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
 
@@ -658,8 +655,8 @@ namespace e6502CPU
                 case 0x5e:
 
                     // On 65C02 (abs,X) takes one less clock cycle (but still add back 1 if page boundary crossed)
-                    if (_currentOP.OpCode == 0x5e && _cpuType == e6502Type.CMOS)
-                        _extraCycles--;
+                    if (currentOp.OpCode == 0x5e && CPUType == e6502Type.CMOS)
+                        ExtraCycles--;
 
                     // shift bit 0 into carry
                     CF = ((oper & 0x01) == 0x01);
@@ -670,14 +667,14 @@ namespace e6502CPU
                     ZF = ((result & 0xff) == 0x00);
                     NF = ((result & 0x80) == 0x80);
 
-                    SaveOperand(_currentOP.AddressMode, result);
+                    SaveOperand(currentOp.AddressMode, result);
 
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // NOP - no operation
                 case 0xea:
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // ORA - OR memory with accumulator (NZ)
@@ -697,13 +694,13 @@ namespace e6502CPU
 
                     A = (byte)result;
 
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // PHA - push accumulator on stack
                 case 0x48:
                     Push(A);
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // PHP - push processor status on stack
@@ -720,19 +717,19 @@ namespace e6502CPU
                     if (CF) sr = sr | 0x01;
 
                     Push((byte)sr);
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // PHX - push X on stack
                 case 0xda:
                     Push(X);
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // PHY - push Y on stack
                 case 0x5a:
                     Push(Y);
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // PLA - pull accumulator from stack (NZ)
@@ -740,7 +737,7 @@ namespace e6502CPU
                     A = PopByte();
                     NF = (A & 0x80) == 0x80;
                     ZF = (A & 0xff) == 0x00;
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // PLP - pull status from stack
@@ -753,7 +750,7 @@ namespace e6502CPU
                     IF = (sr & 0x04) == 0x04;
                     ZF = (sr & 0x02) == 0x02;
                     CF = (sr & 0x01) == 0x01;
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // PLX - pull X from stack (NZ)
@@ -761,7 +758,7 @@ namespace e6502CPU
                     X = PopByte();
                     NF = (X & 0x80) == 0x80;
                     ZF = (X & 0xff) == 0x00;
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // PLY - pull Y from stack (NZ)
@@ -769,7 +766,7 @@ namespace e6502CPU
                     Y = PopByte();
                     NF = (Y & 0x80) == 0x80;
                     ZF = (Y & 0xff) == 0x00;
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // RMBx - clear bit in memory (no flags)
@@ -785,15 +782,15 @@ namespace e6502CPU
                 case 0x77:
 
                     // upper nibble specifies the bit to check
-                     check_bit = (byte)(_currentOP.OpCode >> 4);
+                     check_bit = (byte)(currentOp.OpCode >> 4);
                      check_value = 0x01;
                     for (int ii = 0; ii < check_bit; ii++)
                     {
                         check_value = (byte)(check_value << 1);
                     }
                     check_value = (byte)~check_value;
-                    SaveOperand(_currentOP.AddressMode, oper & check_value);
-                    PC += _currentOP.Bytes;
+                    SaveOperand(currentOp.AddressMode, oper & check_value);
+                    PC += currentOp.Bytes;
                     break;
 
                 // SMBx - set bit in memory (no flags)
@@ -809,14 +806,14 @@ namespace e6502CPU
                 case 0xf7:
 
                     // upper nibble specifies the bit to check (but ignore bit 7)
-                    check_bit = (byte)((_currentOP.OpCode & 0x70) >> 4);
+                    check_bit = (byte)((currentOp.OpCode & 0x70) >> 4);
                     check_value = 0x01;
                     for (int ii = 0; ii < check_bit; ii++)
                     {
                         check_value = (byte)(check_value << 1);
                     }
-                    SaveOperand(_currentOP.AddressMode, oper | check_value);
-                    PC += _currentOP.Bytes;
+                    SaveOperand(currentOp.AddressMode, oper | check_value);
+                    PC += currentOp.Bytes;
                     break;
 
                 // ROL - rotate left one bit (NZC)
@@ -828,8 +825,8 @@ namespace e6502CPU
                 case 0x3e:
 
                     // On 65C02 (abs,X) takes one less clock cycle (but still add back 1 if page boundary crossed)
-                    if (_currentOP.OpCode == 0x3e && _cpuType == e6502Type.CMOS)
-                        _extraCycles--;
+                    if (currentOp.OpCode == 0x3e && CPUType == e6502Type.CMOS)
+                        ExtraCycles--;
 
                     // perserve existing cf value
                     bool old_cf = CF;
@@ -845,9 +842,9 @@ namespace e6502CPU
 
                     ZF = ((result & 0xff) == 0x00);
                     NF = ((result & 0x80) == 0x80);
-                    SaveOperand(_currentOP.AddressMode, result);
+                    SaveOperand(currentOp.AddressMode, result);
 
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // ROR - rotate right one bit (NZC)
@@ -859,8 +856,8 @@ namespace e6502CPU
                 case 0x7e:
 
                     // On 65C02 (abs,X) takes one less clock cycle (but still add back 1 if page boundary crossed)
-                    if (_currentOP.OpCode == 0x7e && _cpuType == e6502Type.CMOS)
-                        _extraCycles--;
+                    if (currentOp.OpCode == 0x7e && CPUType == e6502Type.CMOS)
+                        ExtraCycles--;
 
                     // perserve existing cf value
                     old_cf = CF;
@@ -876,9 +873,9 @@ namespace e6502CPU
 
                     ZF = ((result & 0xff) == 0x00);
                     NF = ((result & 0x80) == 0x80);
-                    SaveOperand(_currentOP.AddressMode, result);
+                    SaveOperand(currentOp.AddressMode, result);
 
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // RTI - return from interrupt
@@ -934,33 +931,33 @@ namespace e6502CPU
                         NF = (A > 0x7f);
 
                         // extra clock cycle on CMOS in decimal mode
-                        if (_cpuType == e6502Type.CMOS)
-                            _extraCycles++;
+                        if (CPUType == e6502Type.CMOS)
+                            ExtraCycles++;
                     }
                     else
                     {
                         ADC((byte)~oper);
                     }
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
 
                     break;
 
                 // SEC - set carry flag
                 case 0x38:
                     CF = true;
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // SED - set decimal mode
                 case 0xf8:
                     DF = true;
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // SEI - set interrupt disable bit
                 case 0x78:
                     IF = true;
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // STA - store accumulator in memory
@@ -972,24 +969,24 @@ namespace e6502CPU
                 case 0x95:
                 case 0x99:
                 case 0x9d:
-                    SaveOperand(_currentOP.AddressMode, A);
-                    PC += _currentOP.Bytes;
+                    SaveOperand(currentOp.AddressMode, A);
+                    PC += currentOp.Bytes;
                     break;
 
                 // STX - store X in memory
                 case 0x86:
                 case 0x8e:
                 case 0x96:
-                    SaveOperand(_currentOP.AddressMode, X);
-                    PC += _currentOP.Bytes;
+                    SaveOperand(currentOp.AddressMode, X);
+                    PC += currentOp.Bytes;
                     break;
 
                 // STY - store Y in memory
                 case 0x84:
                 case 0x8c:
                 case 0x94:
-                    SaveOperand(_currentOP.AddressMode, Y);
-                    PC += _currentOP.Bytes;
+                    SaveOperand(currentOp.AddressMode, Y);
+                    PC += currentOp.Bytes;
                     break;
 
                 // STZ - Store zero
@@ -997,8 +994,8 @@ namespace e6502CPU
                 case 0x74:
                 case 0x9c:
                 case 0x9e:
-                    SaveOperand(_currentOP.AddressMode, 0);
-                    PC += _currentOP.Bytes;
+                    SaveOperand(currentOp.AddressMode, 0);
+                    PC += currentOp.Bytes;
                     break;
 
                 // TAX - transfer accumulator to X (NZ)
@@ -1006,7 +1003,7 @@ namespace e6502CPU
                     X = A;
                     ZF = ((X & 0xff) == 0x00);
                     NF = ((X & 0x80) == 0x80);
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // TAY - transfer accumulator to Y (NZ)
@@ -1014,25 +1011,25 @@ namespace e6502CPU
                     Y = A;
                     ZF = ((Y & 0xff) == 0x00);
                     NF = ((Y & 0x80) == 0x80);
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // TRB - test and reset bits (Z)
                 // Perform bitwise AND between accumulator and contents of memory
                 case 0x14:
                 case 0x1c:
-                    SaveOperand(_currentOP.AddressMode, ~A & oper);
+                    SaveOperand(currentOp.AddressMode, ~A & oper);
                     ZF = (A & oper) == 0x00;
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // TSB - test and set bits (Z)
                 // Perform bitwise AND between accumulator and contents of memory
                 case 0x04:
                 case 0x0c:
-                    SaveOperand(_currentOP.AddressMode, A | oper);
+                    SaveOperand(currentOp.AddressMode, A | oper);
                     ZF = (A & oper) == 0x00;
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // TSX - transfer SP to X (NZ)
@@ -1040,7 +1037,7 @@ namespace e6502CPU
                     X = SP;
                     ZF = ((X & 0xff) == 0x00);
                     NF = ((X & 0x80) == 0x80);
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // TXA - transfer X to A (NZ)
@@ -1048,13 +1045,13 @@ namespace e6502CPU
                     A = X;
                     ZF = ((A & 0xff) == 0x00);
                     NF = ((A & 0x80) == 0x80);
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // TXS - transfer X to SP (no flags -- some online docs are incorrect)
                 case 0x9a:
                     SP = X;
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // TYA - transfer Y to A (NZ)
@@ -1062,7 +1059,7 @@ namespace e6502CPU
                     A = Y;
                     ZF = ((A & 0xff) == 0x00);
                     NF = ((A & 0x80) == 0x80);
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
 
                 // The original 6502 has undocumented and erratic behavior if
@@ -1074,7 +1071,7 @@ namespace e6502CPU
                 // Instructions STP (0xdb) and WAI (0xcb) will reach this case.
                 // For now these are treated as a NOP.
                 default:
-                    PC += _currentOP.Bytes;
+                    PC += currentOp.Bytes;
                     break;
             }
         }
@@ -1091,7 +1088,7 @@ namespace e6502CPU
 
                 // Retrieves the byte at the specified memory location
                 case AddressModes.Absolute:             
-                    oper = memory[ GetImmWord() ];
+                    oper = SystemBus.Read( GetImmWord() ];
                     break;
 
                 // Indexed absolute retrieves the byte at the specified memory location
@@ -1100,21 +1097,21 @@ namespace e6502CPU
                     ushort imm = GetImmWord();
                     ushort result = (ushort)(imm + X);
 
-                    if (_currentOP.CheckPageBoundary)
+                    if (currentOp.CheckPageBoundary)
                     {
-                        if ((imm & 0xff00) != (result & 0xff00)) _extraCycles += 1;
+                        if ((imm & 0xff00) != (result & 0xff00)) ExtraCycles += 1;
                     }
-                    oper = memory[ result ];
+                    oper = SystemBus.Read( result ];
                     break;
                 case AddressModes.AbsoluteY:
                     imm = GetImmWord();
                     result = (ushort)(imm + Y);
 
-                    if (_currentOP.CheckPageBoundary)
+                    if (currentOp.CheckPageBoundary)
                     {
-                        if ((imm & 0xff00) != (result & 0xff00)) _extraCycles += 1;
+                        if ((imm & 0xff00) != (result & 0xff00)) ExtraCycles += 1;
                     }
-                    oper = memory[result]; break;
+                    oper = SystemBus.Read(result]; break;
 
                 // Immediate mode uses the next byte in the instruction directly.
                 case AddressModes.Immediate:
@@ -1130,7 +1127,7 @@ namespace e6502CPU
                 // The immediate word is a memory location from which to retrieve
                 // the 16 bit operand.
                 case AddressModes.Indirect:
-                    oper = GetWordFromMemory(GetImmWord());
+                    oper = SystemBus.ReadWord(GetImmWord());
                     break;
 
                 // The indexed indirect modes uses the immediate byte rather than the
@@ -1145,7 +1142,7 @@ namespace e6502CPU
                      * 4) return the byte located at the address specified by the word
                      */
 
-                    oper = memory[GetWordFromMemory( (byte)(GetImmByte() + X))];
+                    oper = SystemBus.Read(SystemBus.ReadWord( (byte)(GetImmByte() + X))];
                     break;
 
                 // The Indirect Indexed works a bit differently than above.
@@ -1158,12 +1155,12 @@ namespace e6502CPU
                         3)Load the byte at this address
                     */
 
-                    ushort addr = GetWordFromMemory(GetImmByte());
-                    oper = memory[addr + Y];
+                    ushort addr = SystemBus.ReadWord(GetImmByte());
+                    oper = SystemBus.Read(addr + Y];
 
-                    if (_currentOP.CheckPageBoundary)
+                    if (currentOp.CheckPageBoundary)
                     {
-                        if ((oper & 0xff00) != (addr & 0xff00)) _extraCycles++;
+                        if ((oper & 0xff00) != (addr & 0xff00)) ExtraCycles++;
                     }
                     break;
 
@@ -1178,24 +1175,24 @@ namespace e6502CPU
                 // Best programming practice is to place your variables in 0x00-0xff.
                 // Retrieve the byte at the indicated memory location.
                 case AddressModes.ZeroPage:
-                    oper = memory[GetImmByte()];
+                    oper = SystemBus.Read(GetImmByte()];
                     break;
                 case AddressModes.ZeroPageX:
-                    oper = memory[(GetImmByte() + X) & 0xff];
+                    oper = SystemBus.Read((GetImmByte() + X) & 0xff];
                     break;
                 case AddressModes.ZeroPageY:
-                    oper = memory[(GetImmByte() + Y) & 0xff];
+                    oper = SystemBus.Read((GetImmByte() + Y) & 0xff];
                     break;
 
                 // this mode is from the 65C02 extended set
                 // works like ZeroPageY when Y=0
                 case AddressModes.ZeroPage0:
-                    oper = memory[GetWordFromMemory((GetImmByte()) & 0xff)];
+                    oper = SystemBus.Read(SystemBus.ReadWord((GetImmByte()) & 0xff)];
                     break;
 
                 // for this mode do the same thing as ZeroPage
                 case AddressModes.BranchExt:
-                    oper = memory[GetImmByte()];
+                    oper = SystemBus.Read(GetImmByte()];
                     break;
                 default:
                     break;
@@ -1214,13 +1211,13 @@ namespace e6502CPU
 
                 // Absolute mode retrieves the byte at the indicated memory location
                 case AddressModes.Absolute:
-                    memory[GetImmWord()] = (byte)data;
+                    SystemBus.Write(GetImmWord(), (byte)data);
                     break;
                 case AddressModes.AbsoluteX:
-                    memory[GetImmWord() + X] = (byte)data;
+                    SystemBus.Write(GetImmWord() + X, (byte)data);
                     break;
                 case AddressModes.AbsoluteY:
-                    memory[GetImmWord() + Y] = (byte)data;
+                    SystemBus.Write(GetImmWord() + Y, (byte)data);
                     break;
 
                 // Immediate mode uses the next byte in the instruction directly.
@@ -1242,13 +1239,13 @@ namespace e6502CPU
                 // immediate word to get the memory location from which to retrieve
                 // the 16 bit operand.  This is a combination of ZeroPage indexed and Indirect.
                 case AddressModes.XIndirect:
-                    memory[GetWordFromMemory((byte)(GetImmByte() + X))] = (byte)data;
+                    SystemBus.Write(SystemBus.ReadWord((byte)(GetImmByte() + X)), (byte)data);
                     break;
 
                 // The Indirect Indexed works a bit differently than above.
                 // The Y register is added *after* the deferencing instead of before.
                 case AddressModes.IndirectY:
-                    memory[GetWordFromMemory(GetImmByte()) + Y] = (byte)data;
+                    SystemBus.Write(SystemBus.ReadWord(GetImmByte()) + Y, (byte)data);
                     break;
 
                 // Relative is used for branching, the immediate value is a
@@ -1260,21 +1257,21 @@ namespace e6502CPU
                 // Best programming practice is to place your variables in 0x00-0xff.
                 // Retrieve the byte at the indicated memory location.
                 case AddressModes.ZeroPage:
-                    memory[GetImmByte()] = (byte)data;
+                    SystemBus.Write(GetImmByte(), (byte)data);
                     break;
                 case AddressModes.ZeroPageX:
-                    memory[(GetImmByte() + X) & 0xff] = (byte)data;
+                    SystemBus.Write((GetImmByte() + X) & 0xff, (byte)data);
                     break;
                 case AddressModes.ZeroPageY:
-                    memory[(GetImmByte() + Y) & 0xff] = (byte)data;
+                    SystemBus.Write((GetImmByte() + Y) & 0xff, (byte)data);
                     break;
                 case AddressModes.ZeroPage0:
-                    memory[GetWordFromMemory((GetImmByte()) & 0xff)] = (byte)data;
+                    SystemBus.Write(SystemBus.ReadWord((GetImmByte()) & 0xff), (byte)data);
                     break;
 
                 // for this mode do the same thing as ZeroPage
                 case AddressModes.BranchExt:
-                    memory[GetImmByte()] = (byte)data;
+                    SystemBus.Write(GetImmByte(), (byte)data);
                     break;
 
                 default:
@@ -1282,19 +1279,14 @@ namespace e6502CPU
             }
         }
 
-        private ushort GetWordFromMemory(int address)
-        {
-            return (ushort)((memory[address + 1] << 8 | memory[address]) & 0xffff);
-        }
-
         private ushort GetImmWord()
         {
-            return (ushort)((memory[PC + 2] << 8 | memory[PC + 1]) & 0xffff);
+            return SystemBus.ReadWord(PC + 1);
         }
 
         private byte GetImmByte()
         {
-            return memory[PC + 1];
+            return SystemBus.Read(PC + 1);
         }
 
         private int SignExtend(int num)
@@ -1307,22 +1299,22 @@ namespace e6502CPU
 
         private void Push(byte data)
         {
-            memory[(0x0100 | SP)] = data;
+            SystemBus.Write((0x0100 | SP), data);
             SP--;
         }
 
         private void Push(ushort data)
         {
             // HI byte is in a higher address, LO byte is in the lower address
-            memory[(0x0100 | SP)] = (byte)(data >> 8);
-            memory[(0x0100 | (SP-1))] = (byte)(data & 0xff);
+            SystemBus.Write(0x0100 | SP, (byte)(data >> 8));
+            SystemBus.Write(0x0100 | (SP-1), (byte)(data & 0xff));
             SP -= 2;
         }
 
         private byte PopByte()
         {
             SP++;
-            return memory[(0x0100 | SP)];
+            return SystemBus.Read(0x0100 | SP);
         }
         
         private ushort PopWord()
@@ -1330,7 +1322,7 @@ namespace e6502CPU
             // HI byte is in a higher address, LO byte is in the lower address
             SP += 2;
             ushort idx = (ushort)(0x0100 | SP);
-            return (ushort)((memory[idx] << 8 | memory[idx-1]) & 0xffff);
+            return (ushort)((SystemBus.Read(idx) << 8 | SystemBus.Read(idx -1)) & 0xffff);
         }
 
         private void ADC(byte oper)
@@ -1405,11 +1397,11 @@ namespace e6502CPU
             IF = true;
 
             // On 65C02, IRQ, NMI, and RESET also clear the D flag (but not on BRK) after pushing the status register.
-            if (_cpuType == e6502Type.CMOS && !isBRK)
+            if (CPUType == e6502Type.CMOS && !isBRK)
                 DF = false;
 
             // load program counter with the interrupt vector
-            PC = GetWordFromMemory(vector);
+            PC = SystemBus.ReadWord(vector);
         }
         
         private void CheckBranch(bool flag, int oper)
@@ -1417,12 +1409,12 @@ namespace e6502CPU
             if (flag)
             {
                 // extra cycle on branch taken
-                _extraCycles++;
+                ExtraCycles++;
 
                 // extra cycle if branch destination is a different page than
                 // the next instruction
                 if ((PC & 0xff00) != ((PC + oper) & 0xff00))
-                    _extraCycles++;
+                    ExtraCycles++;
 
                 PC += (ushort)oper;
             }

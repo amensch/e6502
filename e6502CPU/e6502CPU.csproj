@@ -7,8 +7,8 @@
     <ProjectGuid>{20DC9955-1EA3-412A-B42D-2CBECAAB9D96}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>e6502CPU</RootNamespace>
-    <AssemblyName>e6502CPU</AssemblyName>
+    <RootNamespace>KDS.e6502CPU</RootNamespace>
+    <AssemblyName>KDS.e6502CPU</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -41,7 +41,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CPU\AddressModes.cs" />
-    <Compile Include="CPU\e6502CPU.cs" />
+    <Compile Include="CPU\e6502.cs" />
+    <Compile Include="CPU\BusDevice.cs" />
     <Compile Include="OpCodes\OpCodeReader.cs" />
     <Compile Include="OpCodes\OpCodeRecord.cs" />
     <Compile Include="OpCodes\OpCodeTable.cs" />

@@ -1,8 +1,8 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using e6502CPU;
+using KDS.e6502CPU;
 
-namespace e6502Tests
+namespace KDS.e6502Tests
 {
     [TestClass]
     public class e6502TestTRB

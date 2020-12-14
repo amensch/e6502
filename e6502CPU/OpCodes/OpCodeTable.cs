@@ -6,7 +6,7 @@
 using System;
 using System.IO;
 
-namespace e6502CPU
+namespace KDS.e6502CPU
 {
     public class OpCodeTable
     {

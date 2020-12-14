@@ -1,4 +1,4 @@
-﻿namespace e6502Debugger
+﻿namespace KDS.e6502Debugger
 {
     partial class MainForm
     {

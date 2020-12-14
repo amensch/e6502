@@ -6,7 +6,7 @@
     <ProjectGuid>{BBDA0D8A-0297-4185-A7D5-3B2DDE26D300}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>e6502Tests</RootNamespace>
+    <RootNamespace>KDS.e6502Tests</RootNamespace>
     <AssemblyName>e6502Tests</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -63,6 +63,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="e6502TestBBR.cs" />
     <Compile Include="e6502AllSuiteTest.cs" />
+    <Compile Include="TestROM.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\e6502CPU\e6502CPU.csproj">
