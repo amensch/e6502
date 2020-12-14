@@ -23,17 +23,17 @@
             Load(program, 0);
         }
 
-        public void Load(byte[] program, ushort loadingAddress)
+        public void Load(byte[] program, int loadingAddress)
         {
             program.CopyTo(ram, loadingAddress);
         }
 
-        public virtual byte Read(ushort address)
+        public virtual byte Read(int address)
         {
             return ram[address];
         }
 
-        public virtual void Write(ushort address, byte data)
+        internal virtual void Write(int address, byte data)
         {
             ram[address] = data;
         }

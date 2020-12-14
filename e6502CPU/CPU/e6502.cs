@@ -42,10 +42,10 @@ namespace KDS.e6502CPU
         public bool CF { get; internal set; }    // carry flag (C)
 
         // Flag for hardware interrupt (IRQ)
-        public bool IRQWaiting { get; internal set; }
+        public bool IRQWaiting { get; set; }
 
         // Flag for non maskable interrupt (NMI)
-        public bool NMIWaiting { get; internal set; }
+        public bool NMIWaiting { get; set; }
 
         // List of op codes and their attributes
         private OpCodeTable opCodeTable;
@@ -58,7 +58,7 @@ namespace KDS.e6502CPU
 
         private e6502Type CPUType;
 
-        private BusDevice SystemBus;
+        public BusDevice SystemBus { get; private set; }
 
         public e6502(BusDevice bus) : this(bus, e6502Type.NMOS) { }
 
@@ -289,7 +289,7 @@ namespace KDS.e6502CPU
                     }
 
                     // if the specified bit is 1 then branch
-                    offset = SystemBus.Read(PC + 2];
+                    offset = SystemBus.Read(PC + 2);
                     PC += currentOp.Bytes;
 
                     if ((oper & check_value) == check_value)
@@ -1088,7 +1088,7 @@ namespace KDS.e6502CPU
 
                 // Retrieves the byte at the specified memory location
                 case AddressModes.Absolute:             
-                    oper = SystemBus.Read( GetImmWord() ];
+                    oper = SystemBus.Read( GetImmWord() );
                     break;
 
                 // Indexed absolute retrieves the byte at the specified memory location
@@ -1101,7 +1101,7 @@ namespace KDS.e6502CPU
                     {
                         if ((imm & 0xff00) != (result & 0xff00)) ExtraCycles += 1;
                     }
-                    oper = SystemBus.Read( result ];
+                    oper = SystemBus.Read( result );
                     break;
                 case AddressModes.AbsoluteY:
                     imm = GetImmWord();
@@ -1111,7 +1111,7 @@ namespace KDS.e6502CPU
                     {
                         if ((imm & 0xff00) != (result & 0xff00)) ExtraCycles += 1;
                     }
-                    oper = SystemBus.Read(result]; break;
+                    oper = SystemBus.Read(result); break;
 
                 // Immediate mode uses the next byte in the instruction directly.
                 case AddressModes.Immediate:
@@ -1142,7 +1142,7 @@ namespace KDS.e6502CPU
                      * 4) return the byte located at the address specified by the word
                      */
 
-                    oper = SystemBus.Read(SystemBus.ReadWord( (byte)(GetImmByte() + X))];
+                    oper = SystemBus.Read(SystemBus.ReadWord( (byte)(GetImmByte() + X)));
                     break;
 
                 // The Indirect Indexed works a bit differently than above.
@@ -1156,7 +1156,7 @@ namespace KDS.e6502CPU
                     */
 
                     ushort addr = SystemBus.ReadWord(GetImmByte());
-                    oper = SystemBus.Read(addr + Y];
+                    oper = SystemBus.Read(addr + Y);
 
                     if (currentOp.CheckPageBoundary)
                     {
@@ -1175,24 +1175,24 @@ namespace KDS.e6502CPU
                 // Best programming practice is to place your variables in 0x00-0xff.
                 // Retrieve the byte at the indicated memory location.
                 case AddressModes.ZeroPage:
-                    oper = SystemBus.Read(GetImmByte()];
+                    oper = SystemBus.Read(GetImmByte());
                     break;
                 case AddressModes.ZeroPageX:
-                    oper = SystemBus.Read((GetImmByte() + X) & 0xff];
+                    oper = SystemBus.Read((ushort)((GetImmByte() + X) & 0xff));
                     break;
                 case AddressModes.ZeroPageY:
-                    oper = SystemBus.Read((GetImmByte() + Y) & 0xff];
+                    oper = SystemBus.Read((ushort)((GetImmByte() + Y) & 0xff));
                     break;
 
                 // this mode is from the 65C02 extended set
                 // works like ZeroPageY when Y=0
                 case AddressModes.ZeroPage0:
-                    oper = SystemBus.Read(SystemBus.ReadWord((GetImmByte()) & 0xff)];
+                    oper = SystemBus.Read(SystemBus.ReadWord((GetImmByte()) & 0xff));
                     break;
 
                 // for this mode do the same thing as ZeroPage
                 case AddressModes.BranchExt:
-                    oper = SystemBus.Read(GetImmByte()];
+                    oper = SystemBus.Read(GetImmByte());
                     break;
                 default:
                     break;

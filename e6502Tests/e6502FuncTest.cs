@@ -17,9 +17,13 @@ namespace KDS.e6502Tests
              *  If the program gets to PC=$3399 then all tests passed.
              */
 
-            e6502 cpu = new e6502(e6502Type.NMOS);
-            cpu.LoadProgram(0x0000, File.ReadAllBytes(@"..\..\Resources\6502_functional_test.bin"));
-            cpu.PC = 0x0400;
+            var bus = new BusDevice(0x10000, File.ReadAllBytes(@"..\..\Resources\6502_functional_test.bin"), 0x0000);
+            e6502 cpu = new e6502(bus, e6502Type.NMOS);
+            cpu.Boot(0x0400);
+
+            //e6502 cpu = new e6502(e6502Type.NMOS);
+            //cpu.LoadProgram(0x0000, File.ReadAllBytes(@"..\..\Resources\6502_functional_test.bin"));
+            //cpu.PC = 0x0400;
 
             ushort prev_pc;
             long instr_count = 0;

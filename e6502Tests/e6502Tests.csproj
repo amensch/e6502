@@ -63,7 +63,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="e6502TestBBR.cs" />
     <Compile Include="e6502AllSuiteTest.cs" />
-    <Compile Include="TestROM.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\e6502CPU\e6502CPU.csproj">
