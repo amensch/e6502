@@ -1,6 +1,6 @@
 ﻿namespace KDS.e6502CPU
 {
-    public class BusDevice
+    public class BusDevice : IBusDevice
     {
         private byte[] ram;
         private int MaxSize;

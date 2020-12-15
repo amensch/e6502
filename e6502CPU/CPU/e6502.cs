@@ -58,11 +58,11 @@ namespace KDS.e6502CPU
         private bool Prefetched = false;
         private int PrefetchedOperand = 0;
 
-        public BusDevice SystemBus { get; private set; }
+        public IBusDevice SystemBus { get; private set; }
 
-        public e6502(BusDevice bus) : this(bus, e6502Type.NMOS) { }
+        public e6502(IBusDevice bus) : this(bus, e6502Type.NMOS) { }
 
-        public e6502(BusDevice bus, e6502Type cpuType)
+        public e6502(IBusDevice bus, e6502Type cpuType)
         {
             opCodeTable = new OpCodeTable();
 
