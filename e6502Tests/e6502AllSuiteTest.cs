@@ -62,6 +62,7 @@ namespace KDS.e6502Tests
                 prev_pc = cpu.PC;
                 cycle_count += cpu.ClocksForNext();
                 cpu.ExecuteNext();
+
             } while (prev_pc != cpu.PC);
 
             Debug.WriteLine("Cycles: " + cycle_count.ToString("N0"));

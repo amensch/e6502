@@ -34,8 +34,8 @@ namespace KDS.e6502CPU
         // Status Registers (in order bit 7 to 0)
         public bool NF { get; internal set; }    // negative flag (N)
         public bool VF { get; internal set; }    // overflow flag (V)
-                                        // bit 5 is unused
-                                        // bit 4 is the break flag however it is not a physical flag in the CPU
+                                                 // bit 5 is unused
+                                                 // bit 4 is the break flag however it is not a physical flag in the CPU
         public bool DF { get; internal set; }    // binary coded decimal flag (D)
         public bool IF { get; internal set; }    // interrupt flag (I)
         public bool ZF { get; internal set; }    // zero flag (Z)
@@ -54,6 +54,9 @@ namespace KDS.e6502CPU
         private OpCodeRecord currentOp;
 
         private e6502Type CPUType;
+
+        private bool Prefetched = false;
+        private int PrefetchedOperand = 0;
 
         public BusDevice SystemBus { get; private set; }
 
@@ -100,11 +103,11 @@ namespace KDS.e6502CPU
 
         public string DasmNextInstruction()
         {
-            OpCodeRecord oprec = opCodeTable.OpCodes[ SystemBus.Read(PC) ];
+            OpCodeRecord oprec = opCodeTable.OpCodes[SystemBus.Read(PC)];
             if (oprec.Bytes == 3)
-                return oprec.Dasm( GetImmWord() );
+                return oprec.Dasm(GetImmWord());
             else
-                return oprec.Dasm( GetImmByte() );
+                return oprec.Dasm(GetImmByte());
         }
 
         /// <summary>
@@ -115,77 +118,47 @@ namespace KDS.e6502CPU
         {
             int clocks = 0;
 
-            // Check for non maskable interrupt (has higher priority over IRQ)
-            if(NMIWaiting)
+            if(ProcessInterrupts())
             {
                 clocks = 6;
             }
-            else if(!IF)
-            {
-                if(IRQWaiting)
-                {
-                    clocks = 6;
-                }
-            }
-            else
-            {
-                currentOp = opCodeTable.OpCodes[SystemBus.Read(PC)];
-                clocks = currentOp.Cycles + ClocksForPageBoundary() + ClocksForBranching();
-                if(CPUType == e6502Type.CMOS)
-                {
-                    switch(currentOp.OpCode)
-                    {
-                        // CMOS fixes a bug in this op code which results in an extra clock cycle
-                        case 0x6c:
-                            clocks++;
-                            break;
 
-                        // extra clock cycle on CMOS in decimal mode
-                        case 0x7d:
-                        case 0xfd:
-                            if (DF) clocks++;
-                            break;
+            currentOp = opCodeTable.OpCodes[SystemBus.Read(PC)];
+            PrefetchedOperand = GetOperand(currentOp.AddressMode, out bool CrossBoundary);
 
-                        // On 65C02 (abs,X) takes one less clock cycle (but still add back 1 if page boundary crossed)
-                        case 0x1e:
-                        case 0x3e:
-                        case 0x5e:
-                        case 0x7e:
-                            clocks--;
-                            break;
+            clocks += currentOp.Cycles + ClocksForCMOS() + ClocksForBranching();
+            if (CrossBoundary) clocks++;
 
-                    }
-                }
-            }
-
+            Prefetched = true;
             return clocks;
         }
 
-        private int ClocksForPageBoundary()
+        private int ClocksForCMOS()
         {
             int clocks = 0;
-            if(currentOp.CheckPageBoundary)
+            if (CPUType == e6502Type.CMOS)
             {
-                switch (currentOp.AddressMode)
+                switch (currentOp.OpCode)
                 {
-                    case AddressModes.AbsoluteX:
-                        ushort imm = GetImmWord();
-                        ushort result = (ushort)(imm + X);
-                        if ((imm & 0xff00) != (result & 0xff00))
-                            clocks++;
+                    // CMOS fixes a bug in this op code which results in an extra clock cycle
+                    case 0x6c:
+                        clocks++;
                         break;
-                    case AddressModes.AbsoluteY:
-                        imm = GetImmWord();
-                        result = (ushort)(imm + Y);
-                        if ((imm & 0xff00) != (result & 0xff00))
-                            clocks++;
+
+                    // extra clock cycle on CMOS in decimal mode
+                    case 0x7d:
+                    case 0xfd:
+                        if (DF) clocks++;
                         break;
-                    case AddressModes.IndirectY:
-                        ushort addr = SystemBus.ReadWord(GetImmByte());
-                        byte oper = SystemBus.Read((ushort)(addr + Y));
-                        if ((oper & 0xff00) != (addr & 0xff00))
-                            clocks++;
+
+                    // On 65C02 (abs,X) takes one less clock cycle (but still add back 1 if page boundary crossed)
+                    case 0x1e:
+                    case 0x3e:
+                    case 0x5e:
+                    case 0x7e:
+                        clocks--;
                         break;
+
                 }
             }
             return clocks;
@@ -246,8 +219,7 @@ namespace KDS.e6502CPU
         private int PrefetchBranch(bool flag)
         {
             int clocks = 0;
-            int oper = GetOperand(currentOp.AddressMode);
-
+            
             if (flag)
             {
                 // extra cycle on branch taken
@@ -255,7 +227,7 @@ namespace KDS.e6502CPU
 
                 // extra cycle if branch destination is a different page than
                 // the next instruction
-                if ((PC & 0xff00) != ((PC + oper) & 0xff00))
+                if ((PC & 0xff00) != ((PC + PrefetchedOperand) & 0xff00))
                     clocks++;
 
             }
@@ -265,32 +237,46 @@ namespace KDS.e6502CPU
         // returns # of clock cycles needed to execute the instruction
         public void ExecuteNext()
         {
+            ProcessInterrupts();
+            ExecuteInstruction();
+            Prefetched = false;
+        }
+
+        private bool ProcessInterrupts()
+        {
             // Check for non maskable interrupt (has higher priority over IRQ)
             if (NMIWaiting)
             {
                 DoIRQ(0xfffa);
                 NMIWaiting = false;
+                return true;
             }
             // Check for hardware interrupt, if enabled
             else if (!IF)
             {
-                if(IRQWaiting)
+                if (IRQWaiting)
                 {
                     DoIRQ(0xfffe);
                     IRQWaiting = false;
+                    return true;
                 }
             }
-            else
-            {
-                currentOp = opCodeTable.OpCodes[SystemBus.Read(PC)];
-                ExecuteInstruction();
-            }
+            return false;
         }
 
         private void ExecuteInstruction()
         {
             int result;
-            int oper = GetOperand(currentOp.AddressMode);
+            int oper;
+            if(Prefetched)
+            {
+                oper = PrefetchedOperand;
+            }
+            else
+            {
+                currentOp = opCodeTable.OpCodes[SystemBus.Read(PC)];
+                oper = GetOperand(currentOp.AddressMode, out bool CrossBoundary);
+            }
 
             switch (currentOp.OpCode)
             {
@@ -313,7 +299,7 @@ namespace KDS.e6502CPU
 
                         CF = (result > 99);
 
-                        if (result > 99 )
+                        if (result > 99)
                         {
                             result -= 100;
                         }
@@ -392,7 +378,7 @@ namespace KDS.e6502CPU
                     // upper nibble specifies the bit to check
                     byte check_bit = (byte)(currentOp.OpCode >> 4);
                     byte check_value = 0x01;
-                    for( int ii=0; ii < check_bit; ii++)
+                    for (int ii = 0; ii < check_bit; ii++)
                     {
                         check_value = (byte)(check_value << 1);
                     }
@@ -517,7 +503,7 @@ namespace KDS.e6502CPU
 
                     // Whether or not the decimal flag is cleared depends on the type of 6502 CPU.
                     // The CMOS 65C02 clears this flag but the NMOS 6502 does not.
-                    if( CPUType == e6502Type.CMOS )
+                    if (CPUType == e6502Type.CMOS)
                         DF = false;
 
                     break;
@@ -568,7 +554,7 @@ namespace KDS.e6502CPU
                 case 0xd5:
                 case 0xd9:
                 case 0xdd:
-                    
+
                     byte temp = (byte)(A - oper);
 
                     CF = A >= (byte)oper;
@@ -716,7 +702,7 @@ namespace KDS.e6502CPU
                     {
                         PC = (ushort)(SystemBus.ReadWord(GetImmWord()));
                     }
-                    else if( currentOp.AddressMode == AddressModes.AbsoluteX)
+                    else if (currentOp.AddressMode == AddressModes.AbsoluteX)
                     {
                         PC = SystemBus.ReadWord((GetImmWord() + X));
                     }
@@ -731,7 +717,7 @@ namespace KDS.e6502CPU
                 case 0x20:
                     // documentation says push PC+2 even though this is a 3 byte instruction
                     // When pulled via RTS 1 is added to the result
-                    Push((ushort)(PC+2));  
+                    Push((ushort)(PC + 2));
                     PC = GetImmWord();
                     break;
 
@@ -914,8 +900,8 @@ namespace KDS.e6502CPU
                 case 0x77:
 
                     // upper nibble specifies the bit to check
-                     check_bit = (byte)(currentOp.OpCode >> 4);
-                     check_value = 0x01;
+                    check_bit = (byte)(currentOp.OpCode >> 4);
+                    check_value = 0x01;
                     for (int ii = 0; ii < check_bit; ii++)
                     {
                         check_value = (byte)(check_value << 1);
@@ -1049,7 +1035,7 @@ namespace KDS.e6502CPU
                         ZF = (result == 0);
 
                         A = CPUMath.BCDToHex(result);
-                        
+
                         // Unlike ZF and CF, the NF flag represents the MSB after conversion
                         // to BCD.
                         NF = (A > 0x7f);
@@ -1196,9 +1182,10 @@ namespace KDS.e6502CPU
             }
         }
 
-        private int GetOperand(AddressModes mode)
+        private int GetOperand(AddressModes mode, out bool CrossBoundary)
         {
             int oper = 0;
+            CrossBoundary = false;
             switch (mode)
             {
                 // Accumulator mode uses the value in the accumulator
@@ -1207,8 +1194,8 @@ namespace KDS.e6502CPU
                     break;
 
                 // Retrieves the byte at the specified memory location
-                case AddressModes.Absolute:             
-                    oper = SystemBus.Read( GetImmWord() );
+                case AddressModes.Absolute:
+                    oper = SystemBus.Read(GetImmWord());
                     break;
 
                 // Indexed absolute retrieves the byte at the specified memory location
@@ -1216,12 +1203,21 @@ namespace KDS.e6502CPU
 
                     ushort imm = GetImmWord();
                     ushort result = (ushort)(imm + X);
-                    oper = SystemBus.Read( result );
+                    oper = SystemBus.Read(result);
+                    if (currentOp.CheckPageBoundary)
+                    {
+                        CrossBoundary = ((imm & 0xff00) != (result & 0xff00));
+                    }
                     break;
                 case AddressModes.AbsoluteY:
                     imm = GetImmWord();
                     result = (ushort)(imm + Y);
-                    oper = SystemBus.Read(result); break;
+                    oper = SystemBus.Read(result);
+                    if (currentOp.CheckPageBoundary)
+                    {
+                        CrossBoundary = ((imm & 0xff00) != (result & 0xff00));
+                    }
+                    break;
 
                 // Immediate mode uses the next byte in the instruction directly.
                 case AddressModes.Immediate:
@@ -1252,7 +1248,7 @@ namespace KDS.e6502CPU
                      * 4) return the byte located at the address specified by the word
                      */
 
-                    oper = SystemBus.Read(SystemBus.ReadWord( (byte)(GetImmByte() + X)));
+                    oper = SystemBus.Read(SystemBus.ReadWord((byte)(GetImmByte() + X)));
                     break;
 
                 // The Indirect Indexed works a bit differently than above.
@@ -1267,6 +1263,10 @@ namespace KDS.e6502CPU
 
                     ushort addr = SystemBus.ReadWord(GetImmByte());
                     oper = SystemBus.Read(addr + Y);
+                    if (currentOp.CheckPageBoundary)
+                    {
+                        CrossBoundary = ((oper & 0xff00) != (addr & 0xff00));
+                    }
                     break;
 
 
@@ -1275,7 +1275,7 @@ namespace KDS.e6502CPU
                 case AddressModes.Relative:
                     oper = CPUMath.SignExtend(GetImmByte());
                     break;
-                    
+
                 // Zero Page mode is a fast way of accessing the first 256 bytes of memory.
                 // Best programming practice is to place your variables in 0x00-0xff.
                 // Retrieve the byte at the indicated memory location.
@@ -1404,7 +1404,7 @@ namespace KDS.e6502CPU
         {
             // HI byte is in a higher address, LO byte is in the lower address
             SystemBus.Write(0x0100 | SP, (byte)(data >> 8));
-            SystemBus.Write(0x0100 | (SP-1), (byte)(data & 0xff));
+            SystemBus.Write(0x0100 | (SP - 1), (byte)(data & 0xff));
             SP -= 2;
         }
 
@@ -1413,13 +1413,13 @@ namespace KDS.e6502CPU
             SP++;
             return SystemBus.Read(0x0100 | SP);
         }
-        
+
         private ushort PopWord()
         {
             // HI byte is in a higher address, LO byte is in the lower address
             SP += 2;
             ushort idx = (ushort)(0x0100 | SP);
-            return (ushort)((SystemBus.Read(idx) << 8 | SystemBus.Read(idx -1)) & 0xffff);
+            return (ushort)((SystemBus.Read(idx) << 8 | SystemBus.Read(idx - 1)) & 0xffff);
         }
 
         private void ADC(byte oper)
@@ -1457,7 +1457,7 @@ namespace KDS.e6502CPU
 
             sr = sr | 0x20;             // bit 5 is unused and always 1
 
-            if(isBRK)
+            if (isBRK)
                 sr = sr | 0x10;         // software interrupt (BRK) pushes B flag as 1
                                         // hardware interrupt pushes B flag as 0
             if (DF) sr = sr | 0x08;
@@ -1477,7 +1477,7 @@ namespace KDS.e6502CPU
             // load program counter with the interrupt vector
             PC = SystemBus.ReadWord(vector);
         }
-        
+
         private void CheckBranch(bool flag, int oper)
         {
             if (flag)

@@ -38,6 +38,7 @@ namespace KDS.e6502Tests
                 cycle_count += cpu.ClocksForNext();
                 cpu.ExecuteNext();
 
+
                 // Add interrupts where expected in the test.
                 switch (prev_pc)
                 {
