@@ -3,7 +3,7 @@
  * Copyright 2016 Adam Mensch
  */
 
- namespace e6502CPU
+namespace KDS.e6502CPU
 {
     public class OpCodeRecord
     {

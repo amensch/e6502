@@ -7,9 +7,9 @@ using System;
 using System.Text;
 using System.Windows.Forms;
 using System.IO;
-using e6502CPU;
+using KDS.e6502CPU;
 
-namespace e6502Debugger
+namespace KDS.e6502Debugger
 {
     public partial class MainForm : Form
     {
@@ -42,8 +42,8 @@ namespace e6502Debugger
         // This is here for easy loading while I am debugging.
         private void LoadKernelProgram()
         {
-            cpu = new e6502( e6502Type.NMOS );
-            cpu.LoadProgram( 0xf000, File.ReadAllBytes( @"..\..\..\e6502Tests\Resources\kernel_01.bin" ) );
+            var bus = new BusDevice(0x10000, File.ReadAllBytes(@"..\..\..\e6502Tests\Resources\kernel_01.bin"), 0xf000);
+            cpu = new e6502( bus, e6502Type.NMOS );
             //cpu.PC = 0xf000;
             UpdateScreen();
         }
@@ -51,27 +51,30 @@ namespace e6502Debugger
         // This is here for easy loading while I am debugging.
         private void LoadTestProgram()
         {
-            cpu = new e6502(e6502Type.CMOS);
-            cpu.LoadProgram(0x0000, File.ReadAllBytes(@"..\..\..\e6502Tests\Resources\6502_functional_test.bin"));
-            cpu.PC = 0x0400;
+            var bus = new BusDevice(0x10000, File.ReadAllBytes(@"..\..\..\e6502Tests\Resources\6502_functional_test.bin"));
+            cpu = new e6502(bus, e6502Type.CMOS);
+
+            cpu.Boot(0x0400);
             UpdateScreen();
         }
 
         // This is here for easy loading while I am debugging.
         private void LoadExtendedTestProgram()
         {
-            cpu = new e6502(e6502Type.CMOS);
-            cpu.LoadProgram(0x0000, File.ReadAllBytes(@"..\..\..\e6502Tests\Resources\65C02_extended_opcodes_test.bin"));
-            cpu.PC = 0x0400;
+            var bus = new BusDevice(0x10000, File.ReadAllBytes(@"..\..\..\e6502Tests\Resources\65C02_extended_opcodes_test.bin"));
+            cpu = new e6502(bus, e6502Type.CMOS);
+
+            cpu.Boot(0x0400);
             UpdateScreen();
         }
 
         // This is here for easy loading while I am debugging.
         private void LoadInterruptTestProgram()
         {
-            cpu = new e6502(e6502Type.CMOS);
-            cpu.LoadProgram(0x0400, File.ReadAllBytes(@"..\..\..\e6502Tests\Resources\6502_interrupt_test.bin"));
-            cpu.PC = 0x0400;
+            var bus = new BusDevice(0x10000, File.ReadAllBytes(@"..\..\..\e6502Tests\Resources\6502_interrupt_test.bin"));
+            cpu = new e6502(bus, e6502Type.CMOS);
+            cpu.Boot(0x0400);
+
             UpdateScreen();
         }
 
@@ -80,16 +83,14 @@ namespace e6502Debugger
             OpenFileDialog dlg = new OpenFileDialog();
             dlg.Multiselect = false;
 
-            if(dlg.ShowDialog() == DialogResult.OK)
+            if (dlg.ShowDialog() == DialogResult.OK)
             {
                 byte[] program = File.ReadAllBytes(dlg.FileName);
-                cpu = new e6502(e6502Type.CMOS);
-                cpu.LoadProgram(0x0000, program);
+                var bus = new BusDevice(0x10000, program);
+                cpu = new e6502(bus, e6502Type.CMOS);
+                cpu.Boot(0x0400);
 
-                // this test program is supposed to start at 0x0400;
-                cpu.PC = 0x0400;
             }
-
             UpdateScreen();
         }
 
@@ -189,12 +190,12 @@ namespace e6502Debugger
                 sb.Append("$" + pc.ToString("X4") + ": ");
                 for (ii = 0x00; ii <= 0x07; ii++)
                 {
-                    sb.Append(cpu.memory[pc + ii].ToString("X2") + " ");
+                    //sb.Append(cpu.Syste[pc + ii].ToString("X2") + " ");
                 }
                 sb.Append(" - ");
                 for (; ii <= 0x0f; ii++)
                 {
-                    sb.Append(cpu.memory[pc + ii].ToString("X2") + " ");
+                    //sb.Append(cpu.memory[pc + ii].ToString("X2") + " ");
                 }
                 sb.AppendLine();
                 if (emptyList)
@@ -225,8 +226,7 @@ namespace e6502Debugger
         private void btnRestart_Click(object sender, EventArgs e)
         {
             lblHalted.Visible = false;
-            cpu.Boot();
-            cpu.PC = 0x0400;
+            cpu.Boot(0x0400);
             UpdateScreen();
         }
 

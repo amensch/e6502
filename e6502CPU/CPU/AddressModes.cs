@@ -3,7 +3,7 @@
  * Copyright 2016 Adam Mensch
  */
 
-namespace e6502CPU
+namespace KDS.e6502CPU
 {
     /*
      *  The addressing mode indicates the source data in an instruction.

@@ -7,7 +7,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace e6502CPU
+namespace KDS.e6502CPU
 {
     public class OpCodeReader : IEnumerable<string>
     {
@@ -15,7 +15,7 @@ namespace e6502CPU
 
         public OpCodeReader()
         {
-            string[] orglist = e6502CPU.Properties.Resources.OpcodeList.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+            string[] orglist = Properties.Resources.OpcodeList.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
             oplist = new List<string>();
 
             // Remove the first two entries as well as blank and null lines

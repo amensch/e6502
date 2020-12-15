@@ -1,10 +1,10 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using e6502CPU;
+using KDS.e6502CPU;
 using System.IO;
 using System.Diagnostics;
 
-namespace e6502Tests
+namespace KDS.e6502Tests
 {
     [TestClass]
     public class e6502InterruptTest
@@ -17,9 +17,13 @@ namespace e6502Tests
              *  If the program gets to PC=$06ec then all tests passed.
              */
 
-            e6502 cpu = new e6502(e6502Type.NMOS);
-            cpu.LoadProgram(0x0400, File.ReadAllBytes(@"..\..\Resources\6502_interrupt_test.bin"));
-            cpu.PC = 0x0400;
+            var bus = new BusDevice(0x10000, File.ReadAllBytes(@"..\..\Resources\6502_interrupt_test.bin"), 0x0400);
+            e6502 cpu = new e6502(bus, e6502Type.NMOS);
+            cpu.Boot(0x0400);
+
+            //e6502 cpu = new e6502(e6502Type.NMOS);
+            //cpu.LoadProgram(0x0400, File.ReadAllBytes(@"..\..\Resources\6502_interrupt_test.bin"));
+            //cpu.PC = 0x0400;
 
             ushort prev_pc;
             long instr_count = 0;
@@ -31,7 +35,9 @@ namespace e6502Tests
             {
                 instr_count++;
                 prev_pc = cpu.PC;
-                cycle_count += cpu.ExecuteNext();
+                cycle_count += cpu.ClocksForNext();
+                cpu.ExecuteNext();
+
 
                 // Add interrupts where expected in the test.
                 switch (prev_pc)

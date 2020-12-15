@@ -6,7 +6,7 @@
     <ProjectGuid>{BBDA0D8A-0297-4185-A7D5-3B2DDE26D300}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>e6502Tests</RootNamespace>
+    <RootNamespace>KDS.e6502Tests</RootNamespace>
     <AssemblyName>e6502Tests</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

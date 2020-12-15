@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 
-namespace e6502Debugger
+namespace KDS.e6502Debugger
 {
     static class Program
     {
