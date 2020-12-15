@@ -2,8 +2,8 @@
 {
     public interface IBusDevice
     {
-        byte Read(int address);
-        void Write(int address, byte data);
-        ushort ReadWord(int address);
+        byte Read(ushort address);
+        void Write(ushort address, byte data);
+        ushort ReadWord(ushort address);
     }
 }
