@@ -1,6 +1,6 @@
 ﻿namespace KDS.e6502CPU
 {
-    public class BusDevice
+    public class BusDevice : IBusDevice
     {
         private byte[] ram;
         private int MaxSize;
@@ -28,17 +28,17 @@
             program.CopyTo(ram, loadingAddress);
         }
 
-        public virtual byte Read(int address)
+        public virtual byte Read(ushort address)
         {
             return ram[address];
         }
 
-        public virtual void Write(int address, byte data)
+        public virtual void Write(ushort address, byte data)
         {
             ram[address] = data;
         }
 
-        public virtual ushort ReadWord(int address)
+        public virtual ushort ReadWord(ushort address)
         {
             return (ushort)((ram[address + 1] << 8 | ram[address]) & 0xffff);
         }

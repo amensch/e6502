@@ -43,6 +43,7 @@
     <Compile Include="CPU\AddressModes.cs" />
     <Compile Include="CPU\e6502.cs" />
     <Compile Include="CPU\BusDevice.cs" />
+    <Compile Include="CPU\IBusDevice.cs" />
     <Compile Include="OpCodes\OpCodeReader.cs" />
     <Compile Include="OpCodes\OpCodeRecord.cs" />
     <Compile Include="OpCodes\OpCodeTable.cs" />

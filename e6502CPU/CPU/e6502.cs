@@ -58,11 +58,11 @@ namespace KDS.e6502CPU
         private bool Prefetched = false;
         private int PrefetchedOperand = 0;
 
-        public BusDevice SystemBus { get; private set; }
+        public IBusDevice SystemBus { get; private set; }
 
-        public e6502(BusDevice bus) : this(bus, e6502Type.NMOS) { }
+        public e6502(IBusDevice bus) : this(bus, e6502Type.NMOS) { }
 
-        public e6502(BusDevice bus, e6502Type cpuType)
+        public e6502(IBusDevice bus, e6502Type cpuType)
         {
             opCodeTable = new OpCodeTable();
 
@@ -384,7 +384,7 @@ namespace KDS.e6502CPU
                     }
 
                     // if the specified bit is 0 then branch
-                    byte offset = SystemBus.Read(PC + 2);
+                    byte offset = SystemBus.Read((ushort)(PC + 2));
                     PC += currentOp.Bytes;
 
                     if ((oper & check_value) == 0x00)
@@ -414,7 +414,7 @@ namespace KDS.e6502CPU
                     }
 
                     // if the specified bit is 1 then branch
-                    offset = SystemBus.Read(PC + 2);
+                    offset = SystemBus.Read((ushort)(PC + 2));
                     PC += currentOp.Bytes;
 
                     if ((oper & check_value) == check_value)
@@ -704,7 +704,7 @@ namespace KDS.e6502CPU
                     }
                     else if (currentOp.AddressMode == AddressModes.AbsoluteX)
                     {
-                        PC = SystemBus.ReadWord((GetImmWord() + X));
+                        PC = SystemBus.ReadWord((ushort)(GetImmWord() + X));
                     }
                     else
                     {
@@ -1262,7 +1262,7 @@ namespace KDS.e6502CPU
                     */
 
                     ushort addr = SystemBus.ReadWord(GetImmByte());
-                    oper = SystemBus.Read(addr + Y);
+                    oper = SystemBus.Read((ushort)(addr + Y));
                     if (currentOp.CheckPageBoundary)
                     {
                         CrossBoundary = ((oper & 0xff00) != (addr & 0xff00));
@@ -1292,7 +1292,7 @@ namespace KDS.e6502CPU
                 // this mode is from the 65C02 extended set
                 // works like ZeroPageY when Y=0
                 case AddressModes.ZeroPage0:
-                    oper = SystemBus.Read(SystemBus.ReadWord((GetImmByte()) & 0xff));
+                    oper = SystemBus.Read(SystemBus.ReadWord((ushort)(GetImmByte() & 0xff)));
                     break;
 
                 // for this mode do the same thing as ZeroPage
@@ -1319,10 +1319,10 @@ namespace KDS.e6502CPU
                     SystemBus.Write(GetImmWord(), (byte)data);
                     break;
                 case AddressModes.AbsoluteX:
-                    SystemBus.Write(GetImmWord() + X, (byte)data);
+                    SystemBus.Write((ushort)(GetImmWord() + X), (byte)data);
                     break;
                 case AddressModes.AbsoluteY:
-                    SystemBus.Write(GetImmWord() + Y, (byte)data);
+                    SystemBus.Write((ushort)(GetImmWord() + Y), (byte)data);
                     break;
 
                 // Immediate mode uses the next byte in the instruction directly.
@@ -1350,7 +1350,7 @@ namespace KDS.e6502CPU
                 // The Indirect Indexed works a bit differently than above.
                 // The Y register is added *after* the deferencing instead of before.
                 case AddressModes.IndirectY:
-                    SystemBus.Write(SystemBus.ReadWord(GetImmByte()) + Y, (byte)data);
+                    SystemBus.Write((ushort)(SystemBus.ReadWord(GetImmByte()) + Y), (byte)data);
                     break;
 
                 // Relative is used for branching, the immediate value is a
@@ -1365,13 +1365,13 @@ namespace KDS.e6502CPU
                     SystemBus.Write(GetImmByte(), (byte)data);
                     break;
                 case AddressModes.ZeroPageX:
-                    SystemBus.Write((GetImmByte() + X) & 0xff, (byte)data);
+                    SystemBus.Write((ushort)((GetImmByte() + X) & 0xff), (byte)data);
                     break;
                 case AddressModes.ZeroPageY:
-                    SystemBus.Write((GetImmByte() + Y) & 0xff, (byte)data);
+                    SystemBus.Write((ushort)((GetImmByte() + Y) & 0xff), (byte)data);
                     break;
                 case AddressModes.ZeroPage0:
-                    SystemBus.Write(SystemBus.ReadWord((GetImmByte()) & 0xff), (byte)data);
+                    SystemBus.Write(SystemBus.ReadWord((ushort)((GetImmByte()) & 0xff)), (byte)data);
                     break;
 
                 // for this mode do the same thing as ZeroPage
@@ -1386,32 +1386,32 @@ namespace KDS.e6502CPU
 
         private ushort GetImmWord()
         {
-            return SystemBus.ReadWord(PC + 1);
+            return SystemBus.ReadWord((ushort)(PC + 1));
         }
 
         private byte GetImmByte()
         {
-            return SystemBus.Read(PC + 1);
+            return SystemBus.Read((ushort)(PC + 1));
         }
 
         private void Push(byte data)
         {
-            SystemBus.Write((0x0100 | SP), data);
+            SystemBus.Write((ushort)(0x0100 | SP), data);
             SP--;
         }
 
         private void Push(ushort data)
         {
             // HI byte is in a higher address, LO byte is in the lower address
-            SystemBus.Write(0x0100 | SP, (byte)(data >> 8));
-            SystemBus.Write(0x0100 | (SP - 1), (byte)(data & 0xff));
+            SystemBus.Write((ushort)(0x0100 | SP), (byte)(data >> 8));
+            SystemBus.Write((ushort)(0x0100 | (SP - 1)), (byte)(data & 0xff));
             SP -= 2;
         }
 
         private byte PopByte()
         {
             SP++;
-            return SystemBus.Read(0x0100 | SP);
+            return SystemBus.Read((ushort)(0x0100 | SP));
         }
 
         private ushort PopWord()
@@ -1419,7 +1419,7 @@ namespace KDS.e6502CPU
             // HI byte is in a higher address, LO byte is in the lower address
             SP += 2;
             ushort idx = (ushort)(0x0100 | SP);
-            return (ushort)((SystemBus.Read(idx) << 8 | SystemBus.Read(idx - 1)) & 0xffff);
+            return (ushort)((SystemBus.Read(idx) << 8 | SystemBus.Read((ushort)(idx - 1))) & 0xffff);
         }
 
         private void ADC(byte oper)
