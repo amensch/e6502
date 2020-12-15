@@ -52,6 +52,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="Utility\CPUMath.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="OpCodes\OpcodeList.txt" />

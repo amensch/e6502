@@ -35,7 +35,8 @@ namespace KDS.e6502Tests
             {
                 instr_count++;
                 prev_pc = cpu.PC;
-                cycle_count += cpu.ExecuteNext();
+                cycle_count += cpu.ClocksForNext();
+                cpu.ExecuteNext();
             } while (prev_pc != cpu.PC);
             sw.Stop();
 

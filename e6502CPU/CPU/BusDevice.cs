@@ -33,7 +33,7 @@
             return ram[address];
         }
 
-        internal virtual void Write(int address, byte data)
+        public virtual void Write(int address, byte data)
         {
             ram[address] = data;
         }

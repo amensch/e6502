@@ -53,9 +53,6 @@ namespace KDS.e6502CPU
         // The current opcode
         private OpCodeRecord currentOp;
 
-        // Clock cycles to adjust due to page boundaries being crossed, branches taken, or NMOS/CMOS differences
-        private int ExtraCycles;
-
         private e6502Type CPUType;
 
         public BusDevice SystemBus { get; private set; }
@@ -110,17 +107,169 @@ namespace KDS.e6502CPU
                 return oprec.Dasm( GetImmByte() );
         }
 
-        // returns # of clock cycles needed to execute the instruction
-        public int ExecuteNext()
+        /// <summary>
+        /// Without executing the instruction determine how many clocks the next instruction will take.
+        /// </summary>
+        /// <returns>how many clock cycles for the next instruction</returns>
+        public int ClocksForNext()
         {
-            ExtraCycles = 0;
+            int clocks = 0;
 
+            // Check for non maskable interrupt (has higher priority over IRQ)
+            if(NMIWaiting)
+            {
+                clocks = 6;
+            }
+            else if(!IF)
+            {
+                if(IRQWaiting)
+                {
+                    clocks = 6;
+                }
+            }
+            else
+            {
+                currentOp = opCodeTable.OpCodes[SystemBus.Read(PC)];
+                clocks = currentOp.Cycles + ClocksForPageBoundary() + ClocksForBranching();
+                if(CPUType == e6502Type.CMOS)
+                {
+                    switch(currentOp.OpCode)
+                    {
+                        // CMOS fixes a bug in this op code which results in an extra clock cycle
+                        case 0x6c:
+                            clocks++;
+                            break;
+
+                        // extra clock cycle on CMOS in decimal mode
+                        case 0x7d:
+                        case 0xfd:
+                            if (DF) clocks++;
+                            break;
+
+                        // On 65C02 (abs,X) takes one less clock cycle (but still add back 1 if page boundary crossed)
+                        case 0x1e:
+                        case 0x3e:
+                        case 0x5e:
+                        case 0x7e:
+                            clocks--;
+                            break;
+
+                    }
+                }
+            }
+
+            return clocks;
+        }
+
+        private int ClocksForPageBoundary()
+        {
+            int clocks = 0;
+            if(currentOp.CheckPageBoundary)
+            {
+                switch (currentOp.AddressMode)
+                {
+                    case AddressModes.AbsoluteX:
+                        ushort imm = GetImmWord();
+                        ushort result = (ushort)(imm + X);
+                        if ((imm & 0xff00) != (result & 0xff00))
+                            clocks++;
+                        break;
+                    case AddressModes.AbsoluteY:
+                        imm = GetImmWord();
+                        result = (ushort)(imm + Y);
+                        if ((imm & 0xff00) != (result & 0xff00))
+                            clocks++;
+                        break;
+                    case AddressModes.IndirectY:
+                        ushort addr = SystemBus.ReadWord(GetImmByte());
+                        byte oper = SystemBus.Read((ushort)(addr + Y));
+                        if ((oper & 0xff00) != (addr & 0xff00))
+                            clocks++;
+                        break;
+                }
+            }
+            return clocks;
+        }
+        private int ClocksForBranching()
+        {
+            int clocks = 0;
+            // Account for extra cycles if a branch is taken
+            switch (currentOp.OpCode)
+            {
+                // BCC - branch on carry clear
+                case 0x90:
+                    clocks += PrefetchBranch(!CF);
+                    break;
+                // BCS - branch on carry set
+                case 0xb0:
+                    clocks += PrefetchBranch(CF);
+                    break;
+                // BEQ - branch on zero
+                case 0xf0:
+                    clocks += PrefetchBranch(ZF);
+                    break;
+                // BMI - branch on negative
+                case 0x30:
+                    clocks += PrefetchBranch(NF);
+                    break;
+
+                // BNE - branch on non zero
+                case 0xd0:
+                    clocks += PrefetchBranch(!ZF);
+                    break;
+
+                // BPL - branch on non negative
+                case 0x10:
+                    clocks += PrefetchBranch(!NF);
+                    break;
+
+                // BRA - unconditional branch to immediate address
+                // NOTE: In OpcodeList.txt the number of clock cycles is one less than the documentation.
+                // This is because CheckBranch() adds one when a branch is taken, which in this case is always.
+                case 0x80:
+                    clocks += PrefetchBranch(true);
+                    break;
+
+                // BVC - branch on overflow clear
+                case 0x50:
+                    clocks += PrefetchBranch(!VF);
+                    break;
+
+                // BVS - branch on overflow set
+                case 0x70:
+                    clocks += PrefetchBranch(VF);
+                    break;
+
+            }
+            return clocks;
+        }
+        private int PrefetchBranch(bool flag)
+        {
+            int clocks = 0;
+            int oper = GetOperand(currentOp.AddressMode);
+
+            if (flag)
+            {
+                // extra cycle on branch taken
+                clocks++;
+
+                // extra cycle if branch destination is a different page than
+                // the next instruction
+                if ((PC & 0xff00) != ((PC + oper) & 0xff00))
+                    clocks++;
+
+            }
+            return clocks;
+        }
+
+        // returns # of clock cycles needed to execute the instruction
+        public void ExecuteNext()
+        {
             // Check for non maskable interrupt (has higher priority over IRQ)
             if (NMIWaiting)
             {
                 DoIRQ(0xfffa);
                 NMIWaiting = false;
-                ExtraCycles += 6;
             }
             // Check for hardware interrupt, if enabled
             else if (!IF)
@@ -129,15 +278,13 @@ namespace KDS.e6502CPU
                 {
                     DoIRQ(0xfffe);
                     IRQWaiting = false;
-                    ExtraCycles += 6;
                 }
             }
-
-            currentOp = opCodeTable.OpCodes[SystemBus.Read(PC)];
-
-            ExecuteInstruction();
-
-            return currentOp.Cycles + ExtraCycles;
+            else
+            {
+                currentOp = opCodeTable.OpCodes[SystemBus.Read(PC)];
+                ExecuteInstruction();
+            }
         }
 
         private void ExecuteInstruction()
@@ -161,7 +308,7 @@ namespace KDS.e6502CPU
 
                     if (DF)
                     {
-                        result = HexToBCD(A) + HexToBCD((byte)oper);
+                        result = CPUMath.HexToBCD(A) + CPUMath.HexToBCD((byte)oper);
                         if (CF) result++;
 
                         CF = (result > 99);
@@ -173,15 +320,11 @@ namespace KDS.e6502CPU
                         ZF = (result == 0);
 
                         // convert decimal result to hex BCD result
-                        A = BCDToHex(result);
+                        A = CPUMath.BCDToHex(result);
 
                         // Unlike ZF and CF, the NF flag represents the MSB after conversion
                         // to BCD.
                         NF = (A > 0x7f);
-
-                        // extra clock cycle on CMOS in decimal mode
-                        if (CPUType == e6502Type.CMOS)
-                            ExtraCycles++;
                     }
                     else
                     {
@@ -218,10 +361,6 @@ namespace KDS.e6502CPU
                 case 0x0a:
                 case 0x0e:
                 case 0x1e:
-
-                    // On 65C02 (abs,X) takes one less clock cycle (but still add back 1 if page boundary crossed)
-                    if (currentOp.OpCode == 0x1e && CPUType == e6502Type.CMOS)
-                        ExtraCycles--;
 
                     // shift bit 7 into carry
                     CF = (oper >= 0x80);
@@ -586,9 +725,6 @@ namespace KDS.e6502CPU
                         throw new InvalidOperationException("This address mode is invalid with the JMP instruction");
                     }
 
-                    // CMOS fixes a bug in this op code which results in an extra clock cycle
-                    if (currentOp.OpCode == 0x6c && CPUType == e6502Type.CMOS)
-                        ExtraCycles++;
                     break;
 
                 // JSR - jump to new location and save return address
@@ -653,10 +789,6 @@ namespace KDS.e6502CPU
                 case 0x4e:
                 case 0x56:
                 case 0x5e:
-
-                    // On 65C02 (abs,X) takes one less clock cycle (but still add back 1 if page boundary crossed)
-                    if (currentOp.OpCode == 0x5e && CPUType == e6502Type.CMOS)
-                        ExtraCycles--;
 
                     // shift bit 0 into carry
                     CF = ((oper & 0x01) == 0x01);
@@ -824,10 +956,6 @@ namespace KDS.e6502CPU
                 case 0x36:
                 case 0x3e:
 
-                    // On 65C02 (abs,X) takes one less clock cycle (but still add back 1 if page boundary crossed)
-                    if (currentOp.OpCode == 0x3e && CPUType == e6502Type.CMOS)
-                        ExtraCycles--;
-
                     // perserve existing cf value
                     bool old_cf = CF;
 
@@ -854,10 +982,6 @@ namespace KDS.e6502CPU
                 case 0x6e:
                 case 0x76:
                 case 0x7e:
-
-                    // On 65C02 (abs,X) takes one less clock cycle (but still add back 1 if page boundary crossed)
-                    if (currentOp.OpCode == 0x7e && CPUType == e6502Type.CMOS)
-                        ExtraCycles--;
 
                     // perserve existing cf value
                     old_cf = CF;
@@ -914,7 +1038,7 @@ namespace KDS.e6502CPU
 
                     if (DF)
                     {
-                        result = HexToBCD(A) - HexToBCD((byte)oper);
+                        result = CPUMath.HexToBCD(A) - CPUMath.HexToBCD((byte)oper);
                         if (!CF) result--;
 
                         CF = (result >= 0);
@@ -924,15 +1048,11 @@ namespace KDS.e6502CPU
                             result += 100;
                         ZF = (result == 0);
 
-                        A = BCDToHex(result);
+                        A = CPUMath.BCDToHex(result);
                         
                         // Unlike ZF and CF, the NF flag represents the MSB after conversion
                         // to BCD.
                         NF = (A > 0x7f);
-
-                        // extra clock cycle on CMOS in decimal mode
-                        if (CPUType == e6502Type.CMOS)
-                            ExtraCycles++;
                     }
                     else
                     {
@@ -1096,21 +1216,11 @@ namespace KDS.e6502CPU
 
                     ushort imm = GetImmWord();
                     ushort result = (ushort)(imm + X);
-
-                    if (currentOp.CheckPageBoundary)
-                    {
-                        if ((imm & 0xff00) != (result & 0xff00)) ExtraCycles += 1;
-                    }
                     oper = SystemBus.Read( result );
                     break;
                 case AddressModes.AbsoluteY:
                     imm = GetImmWord();
                     result = (ushort)(imm + Y);
-
-                    if (currentOp.CheckPageBoundary)
-                    {
-                        if ((imm & 0xff00) != (result & 0xff00)) ExtraCycles += 1;
-                    }
                     oper = SystemBus.Read(result); break;
 
                 // Immediate mode uses the next byte in the instruction directly.
@@ -1157,18 +1267,13 @@ namespace KDS.e6502CPU
 
                     ushort addr = SystemBus.ReadWord(GetImmByte());
                     oper = SystemBus.Read(addr + Y);
-
-                    if (currentOp.CheckPageBoundary)
-                    {
-                        if ((oper & 0xff00) != (addr & 0xff00)) ExtraCycles++;
-                    }
                     break;
 
 
                 // Relative is used for branching, the immediate value is a
                 // signed 8 bit value and used to offset the current PC.
                 case AddressModes.Relative:
-                    oper = SignExtend(GetImmByte());
+                    oper = CPUMath.SignExtend(GetImmByte());
                     break;
                     
                 // Zero Page mode is a fast way of accessing the first 256 bytes of memory.
@@ -1289,14 +1394,6 @@ namespace KDS.e6502CPU
             return SystemBus.Read(PC + 1);
         }
 
-        private int SignExtend(int num)
-        {
-            if (num < 0x80)
-                return num;
-            else
-                return (0xff << 8 | num) & 0xffff;
-        }
-
         private void Push(byte data)
         {
             SystemBus.Write((0x0100 | SP), data);
@@ -1338,29 +1435,6 @@ namespace KDS.e6502CPU
             VF = (~(A ^ oper) & (A ^ answer) & 0x80) != 0x00;
 
             A = (byte)answer;
-        }
-
-        private int HexToBCD(byte oper)
-        {
-            // validate input is valid packed BCD 
-            if (oper > 0x99)
-                throw new InvalidOperationException("Invalid BCD number: " + oper.ToString("X2"));
-            if ((oper & 0x0f) > 0x09)
-                throw new InvalidOperationException("Invalid BCD number: " + oper.ToString("X2"));
-
-            return ((oper >> 4) * 10) + (oper & 0x0f);
-        }
-
-        private byte BCDToHex(int result)
-        {
-            if (result > 0xff)
-                throw new InvalidOperationException("Invalid BCD to hex number: " + result.ToString());
-
-            if (result <= 9)
-                return (byte)result;
-            else
-                return (byte)(((result / 10) << 4) + (result % 10));
-
         }
 
         private void DoIRQ(ushort vector)
@@ -1408,14 +1482,6 @@ namespace KDS.e6502CPU
         {
             if (flag)
             {
-                // extra cycle on branch taken
-                ExtraCycles++;
-
-                // extra cycle if branch destination is a different page than
-                // the next instruction
-                if ((PC & 0xff00) != ((PC + oper) & 0xff00))
-                    ExtraCycles++;
-
                 PC += (ushort)oper;
             }
 
