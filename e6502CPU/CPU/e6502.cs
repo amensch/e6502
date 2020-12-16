@@ -43,9 +43,10 @@ namespace KDS.e6502CPU
 
         // Flag for hardware interrupt (IRQ)
         public bool IRQWaiting { get; set; }
-
         // Flag for non maskable interrupt (NMI)
         public bool NMIWaiting { get; set; }
+        // RDY flag
+        protected bool RDY { get; set; }
 
         // List of op codes and their attributes
         private OpCodeTable opCodeTable;
@@ -90,7 +91,7 @@ namespace KDS.e6502CPU
             // On reset the addresses 0xfffc and 0xfffd are read and PC is loaded with this value.
             // It is expected that the initial program loaded will have these values set to something.
             // Most 6502 systems contain ROM in the upper region (around 0xe000-0xffff)
-            Boot(SystemBus.ReadWord(0xfffc));
+            Boot(ReadWord(0xfffc));
         }
 
         public void Boot(ushort pc)
@@ -700,11 +701,11 @@ namespace KDS.e6502CPU
                     }
                     else if (currentOp.AddressMode == AddressModes.Indirect)
                     {
-                        PC = (ushort)(SystemBus.ReadWord(GetImmWord()));
+                        PC = ReadWord(GetImmWord());
                     }
                     else if (currentOp.AddressMode == AddressModes.AbsoluteX)
                     {
-                        PC = SystemBus.ReadWord((ushort)(GetImmWord() + X));
+                        PC = ReadWord((ushort)(GetImmWord() + X));
                     }
                     else
                     {
@@ -1233,7 +1234,7 @@ namespace KDS.e6502CPU
                 // The immediate word is a memory location from which to retrieve
                 // the 16 bit operand.
                 case AddressModes.Indirect:
-                    oper = SystemBus.ReadWord(GetImmWord());
+                    oper = ReadWord(GetImmWord());
                     break;
 
                 // The indexed indirect modes uses the immediate byte rather than the
@@ -1248,7 +1249,7 @@ namespace KDS.e6502CPU
                      * 4) return the byte located at the address specified by the word
                      */
 
-                    oper = SystemBus.Read(SystemBus.ReadWord((byte)(GetImmByte() + X)));
+                    oper = SystemBus.Read(ReadWord((byte)(GetImmByte() + X)));
                     break;
 
                 // The Indirect Indexed works a bit differently than above.
@@ -1261,7 +1262,7 @@ namespace KDS.e6502CPU
                         3)Load the byte at this address
                     */
 
-                    ushort addr = SystemBus.ReadWord(GetImmByte());
+                    ushort addr = ReadWord(GetImmByte());
                     oper = SystemBus.Read((ushort)(addr + Y));
                     if (currentOp.CheckPageBoundary)
                     {
@@ -1292,7 +1293,7 @@ namespace KDS.e6502CPU
                 // this mode is from the 65C02 extended set
                 // works like ZeroPageY when Y=0
                 case AddressModes.ZeroPage0:
-                    oper = SystemBus.Read(SystemBus.ReadWord((ushort)(GetImmByte() & 0xff)));
+                    oper = SystemBus.Read(ReadWord((ushort)(GetImmByte() & 0xff)));
                     break;
 
                 // for this mode do the same thing as ZeroPage
@@ -1344,13 +1345,13 @@ namespace KDS.e6502CPU
                 // immediate word to get the memory location from which to retrieve
                 // the 16 bit operand.  This is a combination of ZeroPage indexed and Indirect.
                 case AddressModes.XIndirect:
-                    SystemBus.Write(SystemBus.ReadWord((byte)(GetImmByte() + X)), (byte)data);
+                    SystemBus.Write(ReadWord((byte)(GetImmByte() + X)), (byte)data);
                     break;
 
                 // The Indirect Indexed works a bit differently than above.
                 // The Y register is added *after* the deferencing instead of before.
                 case AddressModes.IndirectY:
-                    SystemBus.Write((ushort)(SystemBus.ReadWord(GetImmByte()) + Y), (byte)data);
+                    SystemBus.Write((ushort)(ReadWord(GetImmByte()) + Y), (byte)data);
                     break;
 
                 // Relative is used for branching, the immediate value is a
@@ -1371,7 +1372,7 @@ namespace KDS.e6502CPU
                     SystemBus.Write((ushort)((GetImmByte() + Y) & 0xff), (byte)data);
                     break;
                 case AddressModes.ZeroPage0:
-                    SystemBus.Write(SystemBus.ReadWord((ushort)((GetImmByte()) & 0xff)), (byte)data);
+                    SystemBus.Write(ReadWord((ushort)((GetImmByte()) & 0xff)), (byte)data);
                     break;
 
                 // for this mode do the same thing as ZeroPage
@@ -1386,12 +1387,17 @@ namespace KDS.e6502CPU
 
         private ushort GetImmWord()
         {
-            return SystemBus.ReadWord((ushort)(PC + 1));
+            return ReadWord((ushort)(PC + 1));
         }
 
         private byte GetImmByte()
         {
             return SystemBus.Read((ushort)(PC + 1));
+        }
+
+        private ushort ReadWord(ushort address)
+        {
+            return (ushort)(SystemBus.Read((ushort)(address + 1)) << 8 | SystemBus.Read(address) & 0xffff);
         }
 
         private void Push(byte data)
@@ -1475,7 +1481,7 @@ namespace KDS.e6502CPU
                 DF = false;
 
             // load program counter with the interrupt vector
-            PC = SystemBus.ReadWord(vector);
+            PC = ReadWord(vector);
         }
 
         private void CheckBranch(bool flag, int oper)

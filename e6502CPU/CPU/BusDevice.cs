@@ -37,12 +37,5 @@
         {
             ram[address] = data;
         }
-
-        public virtual ushort ReadWord(ushort address)
-        {
-            return (ushort)((ram[address + 1] << 8 | ram[address]) & 0xffff);
-        }
-
-
     }
 }
