@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30804.86
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "e6502CPU", "e6502CPU\e6502CPU.csproj", "{20DC9955-1EA3-412A-B42D-2CBECAAB9D96}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "e6502Debugger", "e6502Debugger\e6502Debugger.csproj", "{6219B602-E7F7-4A2A-B778-9378F62DE178}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "e6502Tests", "e6502Tests\e6502Tests.csproj", "{BBDA0D8A-0297-4185-A7D5-3B2DDE26D300}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "e6502Tests", "e6502Tests\e6502Tests.csproj", "{785588DA-4EE2-498A-A511-26252DA9525F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,12 +23,15 @@ Global
 		{6219B602-E7F7-4A2A-B778-9378F62DE178}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6219B602-E7F7-4A2A-B778-9378F62DE178}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6219B602-E7F7-4A2A-B778-9378F62DE178}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BBDA0D8A-0297-4185-A7D5-3B2DDE26D300}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BBDA0D8A-0297-4185-A7D5-3B2DDE26D300}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BBDA0D8A-0297-4185-A7D5-3B2DDE26D300}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BBDA0D8A-0297-4185-A7D5-3B2DDE26D300}.Release|Any CPU.Build.0 = Release|Any CPU
+		{785588DA-4EE2-498A-A511-26252DA9525F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{785588DA-4EE2-498A-A511-26252DA9525F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{785588DA-4EE2-498A-A511-26252DA9525F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{785588DA-4EE2-498A-A511-26252DA9525F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D3DF5991-7000-4B19-A55E-6884537A153C}
 	EndGlobalSection
 EndGlobal

@@ -2,8 +2,8 @@
 {
     public class BusDevice : IBusDevice
     {
-        private byte[] ram;
-        private int MaxSize;
+        private readonly byte[] ram;
+        private readonly int MaxSize;
 
         public BusDevice(int maxSize, byte[] program, ushort loadingAddress) : this(maxSize)
         {

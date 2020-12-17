@@ -49,12 +49,12 @@ namespace KDS.e6502CPU
         protected bool RDY { get; set; }
 
         // List of op codes and their attributes
-        private OpCodeTable opCodeTable;
+        private readonly OpCodeTable opCodeTable;
 
         // The current opcode
         private OpCodeRecord currentOp;
 
-        private e6502Type CPUType;
+        private readonly e6502Type CPUType;
 
         private bool Prefetched = false;
         private int PrefetchedOperand = 0;
@@ -238,7 +238,7 @@ namespace KDS.e6502CPU
         // returns # of clock cycles needed to execute the instruction
         public void ExecuteNext()
         {
-            ProcessInterrupts();
+            if(!Prefetched) ProcessInterrupts();
             ExecuteInstruction();
             Prefetched = false;
         }
@@ -269,14 +269,14 @@ namespace KDS.e6502CPU
         {
             int result;
             int oper;
-            if(Prefetched)
+            if (Prefetched)
             {
                 oper = PrefetchedOperand;
             }
             else
             {
                 currentOp = opCodeTable.OpCodes[SystemBus.Read(PC)];
-                oper = GetOperand(currentOp.AddressMode, out bool CrossBoundary);
+                oper = GetOperand(currentOp.AddressMode, out _);
             }
 
             switch (currentOp.OpCode)
@@ -826,14 +826,14 @@ namespace KDS.e6502CPU
                 case 0x08:
                     int sr = 0x00;
 
-                    if (NF) sr = sr | 0x80;
-                    if (VF) sr = sr | 0x40;
-                    sr = sr | 0x20; // bit 5 is always 1
-                    sr = sr | 0x10; // bit 4 is always 1 for PHP
-                    if (DF) sr = sr | 0x08;
-                    if (IF) sr = sr | 0x04;
-                    if (ZF) sr = sr | 0x02;
-                    if (CF) sr = sr | 0x01;
+                    if (NF) sr |= 0x80;
+                    if (VF) sr |= 0x40;
+                    sr |= 0x20; // bit 5 is always 1
+                    sr |= 0x10; // bit 4 is always 1 for PHP
+                    if (DF) sr |= 0x08;
+                    if (IF) sr |= 0x04;
+                    if (ZF) sr |= 0x02;
+                    if (CF) sr |= 0x01;
 
                     Push((byte)sr);
                     PC += currentOp.Bytes;
@@ -953,7 +953,7 @@ namespace KDS.e6502CPU
                     result = oper << 1;
 
                     // old carry flag goes to bit zero
-                    if (old_cf) result = result | 0x01;
+                    if (old_cf) result |= 0x01;
 
                     ZF = ((result & 0xff) == 0x00);
                     NF = ((result & 0x80) == 0x80);
@@ -980,7 +980,7 @@ namespace KDS.e6502CPU
                     result = oper >> 1;
 
                     // old carry flag goes to bit 7
-                    if (old_cf) result = result | 0x80;
+                    if (old_cf) result |= 0x80;
 
                     ZF = ((result & 0xff) == 0x00);
                     NF = ((result & 0x80) == 0x80);
@@ -1458,18 +1458,18 @@ namespace KDS.e6502CPU
 
             // Push the status register
             int sr = 0x00;
-            if (NF) sr = sr | 0x80;
-            if (VF) sr = sr | 0x40;
+            if (NF) sr |= 0x80;
+            if (VF) sr |= 0x40;
 
-            sr = sr | 0x20;             // bit 5 is unused and always 1
+            sr |= 0x20;             // bit 5 is unused and always 1
 
             if (isBRK)
-                sr = sr | 0x10;         // software interrupt (BRK) pushes B flag as 1
+                sr |= 0x10;         // software interrupt (BRK) pushes B flag as 1
                                         // hardware interrupt pushes B flag as 0
-            if (DF) sr = sr | 0x08;
-            if (IF) sr = sr | 0x04;
-            if (ZF) sr = sr | 0x02;
-            if (CF) sr = sr | 0x01;
+            if (DF) sr |= 0x08;
+            if (IF) sr |= 0x04;
+            if (ZF) sr |= 0x02;
+            if (CF) sr |= 0x01;
 
             Push((byte)sr);
 

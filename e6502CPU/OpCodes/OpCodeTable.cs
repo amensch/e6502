@@ -32,12 +32,8 @@ namespace KDS.e6502CPU
             string bytes;
             string cycles;
 
-            int rec_opcode;
             string rec_instr;
             AddressModes rec_mode;
-            ushort rec_bytes;
-            int rec_cycles;
-            bool rec_checkPageBoundary;
             bool rec_checkBranchPage;
 
             foreach( String line in oplist )
@@ -50,12 +46,12 @@ namespace KDS.e6502CPU
                     bytes = line.Substring(34, 6).Trim();
                     cycles = line.Substring(40).Trim();
 
-                    rec_checkPageBoundary = (cycles.Length == 2);
+                    bool rec_checkPageBoundary = (cycles.Length == 2);
                     rec_checkBranchPage = (cycles.Length == 3);
                     cycles = cycles.Substring(0,1);
                     
 
-                    if( !int.TryParse(opcode, System.Globalization.NumberStyles.AllowHexSpecifier, null, out rec_opcode))
+                    if( !int.TryParse(opcode, System.Globalization.NumberStyles.AllowHexSpecifier, null, out int rec_opcode))
                     {
                         throw new InvalidDataException("Line + [" + line + "] (opc) has invalid data");
                     }
@@ -124,11 +120,11 @@ namespace KDS.e6502CPU
                             throw new InvalidDataException("Line + [" + line + "] (addressing) has invalid data");
 
                     }
-                    if (!ushort.TryParse(bytes, out rec_bytes))
+                    if (!ushort.TryParse(bytes, out ushort rec_bytes))
                     {
                         throw new InvalidDataException("Line + [" + line + "] (bytes) has invalid data");
                     }
-                    if (!int.TryParse(cycles, out rec_cycles))
+                    if (!int.TryParse(cycles, out int rec_cycles))
                     {
                         throw new InvalidDataException("Line + [" + line + "] (cycles) has invalid data");
                     }
