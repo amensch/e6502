@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{BBDA0D8A-0297-4185-A7D5-3B2DDE26D300}</ProjectGuid>
+    <ProjectGuid>{785588DA-4EE2-498A-A511-26252DA9525F}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>KDS.e6502Tests</RootNamespace>

@@ -2,8 +2,8 @@
 {
     public class BusDevice : IBusDevice
     {
-        private byte[] ram;
-        private int MaxSize;
+        private readonly byte[] ram;
+        private readonly int MaxSize;
 
         public BusDevice(int maxSize, byte[] program, ushort loadingAddress) : this(maxSize)
         {
@@ -37,12 +37,5 @@
         {
             ram[address] = data;
         }
-
-        public virtual ushort ReadWord(ushort address)
-        {
-            return (ushort)((ram[address + 1] << 8 | ram[address]) & 0xffff);
-        }
-
-
     }
 }

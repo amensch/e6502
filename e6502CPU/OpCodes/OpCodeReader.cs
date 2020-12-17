@@ -11,7 +11,7 @@ namespace KDS.e6502CPU
 {
     public class OpCodeReader : IEnumerable<string>
     {
-        private List<string> oplist;
+        private readonly List<string> oplist;
 
         public OpCodeReader()
         {
