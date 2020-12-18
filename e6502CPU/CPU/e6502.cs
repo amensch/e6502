@@ -52,7 +52,7 @@ namespace KDS.e6502CPU
         private readonly OpCodeTable opCodeTable;
 
         // The current opcode
-        private OpCodeRecord currentOp;
+        protected OpCodeRecord currentOp;
 
         private readonly e6502Type CPUType;
 
@@ -115,7 +115,7 @@ namespace KDS.e6502CPU
         /// Without executing the instruction determine how many clocks the next instruction will take.
         /// </summary>
         /// <returns>how many clock cycles for the next instruction</returns>
-        public int ClocksForNext()
+        public virtual int ClocksForNext()
         {
             int clocks = 0;
 
@@ -236,7 +236,7 @@ namespace KDS.e6502CPU
         }
 
         // returns # of clock cycles needed to execute the instruction
-        public void ExecuteNext()
+        public virtual void ExecuteNext()
         {
             if(!Prefetched) ProcessInterrupts();
             ExecuteInstruction();
