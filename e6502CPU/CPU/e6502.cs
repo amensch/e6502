@@ -172,46 +172,46 @@ namespace KDS.e6502CPU
             {
                 // BCC - branch on carry clear
                 case 0x90:
-                    clocks += PrefetchBranch(!CF);
+                    clocks = PrefetchBranch(!CF);
                     break;
                 // BCS - branch on carry set
                 case 0xb0:
-                    clocks += PrefetchBranch(CF);
+                    clocks = PrefetchBranch(CF);
                     break;
                 // BEQ - branch on zero
                 case 0xf0:
-                    clocks += PrefetchBranch(ZF);
+                    clocks = PrefetchBranch(ZF);
                     break;
                 // BMI - branch on negative
                 case 0x30:
-                    clocks += PrefetchBranch(NF);
+                    clocks = PrefetchBranch(NF);
                     break;
 
                 // BNE - branch on non zero
                 case 0xd0:
-                    clocks += PrefetchBranch(!ZF);
+                    clocks = PrefetchBranch(!ZF);
                     break;
 
                 // BPL - branch on non negative
                 case 0x10:
-                    clocks += PrefetchBranch(!NF);
+                    clocks = PrefetchBranch(!NF);
                     break;
 
                 // BRA - unconditional branch to immediate address
                 // NOTE: In OpcodeList.txt the number of clock cycles is one less than the documentation.
                 // This is because CheckBranch() adds one when a branch is taken, which in this case is always.
                 case 0x80:
-                    clocks += PrefetchBranch(true);
+                    clocks = PrefetchBranch(true);
                     break;
 
                 // BVC - branch on overflow clear
                 case 0x50:
-                    clocks += PrefetchBranch(!VF);
+                    clocks = PrefetchBranch(!VF);
                     break;
 
                 // BVS - branch on overflow set
                 case 0x70:
-                    clocks += PrefetchBranch(VF);
+                    clocks = PrefetchBranch(VF);
                     break;
 
             }
@@ -219,20 +219,20 @@ namespace KDS.e6502CPU
         }
         private int PrefetchBranch(bool flag)
         {
-            int clocks = 0;
-            
             if (flag)
             {
-                // extra cycle on branch taken
-                clocks++;
-
                 // extra cycle if branch destination is a different page than
                 // the next instruction
                 if ((PC & 0xff00) != ((PC + PrefetchedOperand) & 0xff00))
-                    clocks++;
-
+				{
+					return 2;
+				}
+				else
+				{
+					return 1;
+				}
             }
-            return clocks;
+            return 0;
         }
 
         // returns # of clock cycles needed to execute the instruction
