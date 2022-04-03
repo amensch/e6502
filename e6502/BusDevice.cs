@@ -1,22 +1,18 @@
-﻿namespace KDS.e6502CPU
+﻿namespace KDS.e6502
 {
+    /// <summary>
+    /// Example Bus Device for loading a 
+    /// </summary>
     public class BusDevice : IBusDevice
     {
-        private readonly byte[] ram;
-        private readonly int MaxSize;
+        private readonly byte[] ram = new byte[0x10000];
 
-        public BusDevice(int maxSize, byte[] program, ushort loadingAddress) : this(maxSize)
+        public BusDevice(byte[] program, ushort loadingAddress)
         {
             Load(program, loadingAddress);
         }
 
-        public BusDevice(int maxSize, byte[] program) : this(maxSize, program, 0) { }
-
-        public BusDevice(int maxSize)
-        {
-            MaxSize = maxSize;
-            ram = new byte[maxSize];
-        }
+        public BusDevice(byte[] program) : this(program, 0) { }
 
         public void Load(byte[] program)
         {

@@ -1,16 +1,11 @@
-﻿/*
- * e6502: A complete 6502 CPU emulator.
- * Copyright 2016 Adam Mensch
- */
-
-namespace KDS.e6502CPU
+﻿namespace KDS.e6502.OpCodes
 {
     /*
      *  The addressing mode indicates the source data in an instruction.
      *  There are two types of addressing modes, indexed and non-indexed.
      */
 
-    public enum AddressModes
+    internal enum AddressModes
     {
         // Non-indexed, non memory
         Accumulator,    // operand is A accumulator

@@ -1,21 +1,13 @@
-﻿/*
- * e6502: A complete 6502 CPU emulator.
- * Copyright 2016 Adam Mensch
- */
-
-using System;
-using System.IO;
-
-namespace KDS.e6502CPU
+﻿namespace KDS.e6502.OpCodes
 {
-    public class OpCodeTable
+    internal class OpCodeTable
     {
         public OpCodeRecord[] OpCodes { get; private set; }
 
         public OpCodeTable()
         {
-            OpCodes = new OpCodeRecord[0xff+1];
-            for( int ii=0; ii<=0xff; ii++)
+            OpCodes = new OpCodeRecord[0xff + 1];
+            for (int ii = 0; ii <= 0xff; ii++)
             {
                 OpCodes[ii] = new OpCodeRecord();
             }
@@ -36,7 +28,7 @@ namespace KDS.e6502CPU
             AddressModes rec_mode;
             bool rec_checkBranchPage;
 
-            foreach( String line in oplist )
+            foreach (String line in oplist)
             {
                 if (line.Length > 40)
                 {
@@ -48,10 +40,10 @@ namespace KDS.e6502CPU
 
                     bool rec_checkPageBoundary = (cycles.Length == 2);
                     rec_checkBranchPage = (cycles.Length == 3);
-                    cycles = cycles.Substring(0,1);
-                    
+                    cycles = cycles.Substring(0, 1);
 
-                    if( !int.TryParse(opcode, System.Globalization.NumberStyles.AllowHexSpecifier, null, out int rec_opcode))
+
+                    if (!int.TryParse(opcode, System.Globalization.NumberStyles.AllowHexSpecifier, null, out int rec_opcode))
                     {
                         throw new InvalidDataException("Line + [" + line + "] (opc) has invalid data");
                     }
@@ -69,7 +61,7 @@ namespace KDS.e6502CPU
                         throw new InvalidDataException("Line + [" + line + "] (assembler) has invalid data");
                     }
 
-                    switch(address)
+                    switch (address)
                     {
                         case "accumulator":
                             rec_mode = AddressModes.Accumulator;
@@ -134,7 +126,7 @@ namespace KDS.e6502CPU
 
                 }
 
-            } 
+            }
 
         }
 

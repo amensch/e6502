@@ -1,4 +1,4 @@
-﻿namespace KDS.e6502CPU
+﻿namespace KDS.e6502
 {
     public interface IBusDevice
     {

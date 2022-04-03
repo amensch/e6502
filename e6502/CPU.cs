@@ -1,11 +1,7 @@
-﻿/*
- * e6502: A complete 6502 CPU emulator.
- * Copyright 2016 Adam Mensch
- */
+﻿using KDS.e6502.OpCodes;
+using KDS.e6502.Utility;
 
-using System;
-
-namespace KDS.e6502CPU
+namespace KDS.e6502
 {
     public enum e6502Type
     {
@@ -13,7 +9,7 @@ namespace KDS.e6502CPU
         NMOS
     };
 
-    public class e6502
+    public class CPU
     {
         // Main Register
         public byte A { get; internal set; }
@@ -52,7 +48,7 @@ namespace KDS.e6502CPU
         private readonly OpCodeTable opCodeTable;
 
         // The current opcode
-        protected OpCodeRecord currentOp;
+        private OpCodeRecord currentOp;
 
         private readonly e6502Type CPUType;
 
@@ -61,11 +57,12 @@ namespace KDS.e6502CPU
 
         public IBusDevice SystemBus { get; private set; }
 
-        public e6502(IBusDevice bus) : this(bus, e6502Type.NMOS) { }
+        public CPU(IBusDevice bus) : this(bus, e6502Type.NMOS) { }
 
-        public e6502(IBusDevice bus, e6502Type cpuType)
+        public CPU(IBusDevice bus, e6502Type cpuType)
         {
             opCodeTable = new OpCodeTable();
+            currentOp = new OpCodeRecord();
 
             // Set these on instantiation so they are known values when using this object in testing.
             // Real programs should explicitly load these values before using them.
@@ -119,7 +116,7 @@ namespace KDS.e6502CPU
         {
             int clocks = 0;
 
-            if(ProcessInterrupts())
+            if (ProcessInterrupts())
             {
                 clocks = 6;
             }
@@ -224,13 +221,13 @@ namespace KDS.e6502CPU
                 // extra cycle if branch destination is a different page than
                 // the next instruction
                 if ((PC & 0xff00) != ((PC + PrefetchedOperand) & 0xff00))
-				{
-					return 2;
-				}
-				else
-				{
-					return 1;
-				}
+                {
+                    return 2;
+                }
+                else
+                {
+                    return 1;
+                }
             }
             return 0;
         }
@@ -238,7 +235,7 @@ namespace KDS.e6502CPU
         // returns # of clock cycles needed to execute the instruction
         public virtual void ExecuteNext()
         {
-            if(!Prefetched) ProcessInterrupts();
+            if (!Prefetched) ProcessInterrupts();
             ExecuteInstruction();
             Prefetched = false;
         }
@@ -1465,7 +1462,7 @@ namespace KDS.e6502CPU
 
             if (isBRK)
                 sr |= 0x10;         // software interrupt (BRK) pushes B flag as 1
-                                        // hardware interrupt pushes B flag as 0
+                                    // hardware interrupt pushes B flag as 0
             if (DF) sr |= 0x08;
             if (IF) sr |= 0x04;
             if (ZF) sr |= 0x02;

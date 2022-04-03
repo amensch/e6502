@@ -1,25 +1,18 @@
-﻿/*
- * e6502: A complete 6502 CPU emulator.
- * Copyright 2016 Adam Mensch
- */
+﻿using System.Collections;
 
- using System;
-using System.Collections;
-using System.Collections.Generic;
-
-namespace KDS.e6502CPU
+namespace KDS.e6502.OpCodes
 {
-    public class OpCodeReader : IEnumerable<string>
+    internal class OpCodeReader : IEnumerable<string>
     {
         private readonly List<string> oplist;
 
         public OpCodeReader()
         {
-            string[] orglist = Properties.Resources.OpcodeList.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+            string[] orglist = Properties.Resources.OpCodeList.Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
             oplist = new List<string>();
 
             // Remove the first two entries as well as blank and null lines
-            for( int ii=0; ii <= orglist.GetUpperBound(0); ii++)
+            for (int ii = 0; ii <= orglist.GetUpperBound(0); ii++)
             {
                 if ((ii > 1) && orglist[ii] != null && orglist[ii].Length > 0)
                     oplist.Add(orglist[ii]);

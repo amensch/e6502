@@ -1,11 +1,6 @@
-﻿/*
- * e6502: A complete 6502 CPU emulator.
- * Copyright 2016 Adam Mensch
- */
-
-namespace KDS.e6502CPU
+﻿namespace KDS.e6502.OpCodes
 {
-    public class OpCodeRecord
+    internal class OpCodeRecord
     {
         public byte OpCode { get; private set; }
         public string Instruction { get; private set; }
@@ -22,10 +17,11 @@ namespace KDS.e6502CPU
             CheckBranchPage = false;
             CheckPageBoundary = false;
             IsValid = false;
+            Instruction = string.Empty;
         }
 
         public OpCodeRecord(byte opcode, string instruction, AddressModes addressmode, ushort bytes, int cycles,
-                               bool checkPageBoundary, bool checkBranchPage )
+                               bool checkPageBoundary, bool checkBranchPage)
         {
             OpCode = opcode;
             Instruction = instruction;
@@ -42,7 +38,7 @@ namespace KDS.e6502CPU
             if (!IsValid)
                 return "???";
 
-            if ( AddressMode == AddressModes.Accumulator)
+            if (AddressMode == AddressModes.Accumulator)
             {
                 return Instruction + " A";
             }
