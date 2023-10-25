@@ -9,7 +9,7 @@ namespace KDS.e6502
         NMOS
     };
 
-    public class CPU
+    public class CPU6502
     {
         // Main Register
         public byte A { get; internal set; }
@@ -57,9 +57,9 @@ namespace KDS.e6502
 
         public IBusDevice SystemBus { get; private set; }
 
-        public CPU(IBusDevice bus) : this(bus, e6502Type.NMOS) { }
+        public CPU6502(IBusDevice bus) : this(bus, e6502Type.NMOS) { }
 
-        public CPU(IBusDevice bus, e6502Type cpuType)
+        public CPU6502(IBusDevice bus, e6502Type cpuType)
         {
             opCodeTable = new OpCodeTable();
             currentOp = new OpCodeRecord();

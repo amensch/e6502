@@ -5,7 +5,7 @@ using System.IO;
 namespace KDS.e6502UnitTests
 {
     [TestClass]
-    public class e6502Tests
+    public class CPU6502Tests
     {
 
         private const string ResourcePath = @"..\..\..\Resources\";
@@ -20,7 +20,7 @@ namespace KDS.e6502UnitTests
         public void RunAllSuiteTest()
         {
             var bus = new BusDevice(File.ReadAllBytes($"{ResourcePath}AllSuiteA.bin"), 0x4000);
-            var cpu = new CPU(bus, e6502Type.CMOS);
+            var cpu = new CPU6502(bus, e6502Type.CMOS);
             cpu.Boot(0x0400);
 
             ushort prev_pc;
@@ -37,7 +37,7 @@ namespace KDS.e6502UnitTests
         public void RunAllSuiteTestByTick()
         {
             var bus = new BusDevice(File.ReadAllBytes($"{ResourcePath}AllSuiteA.bin"), 0x4000);
-            var cpu = new CPU(bus, e6502Type.CMOS);
+            var cpu = new CPU6502(bus, e6502Type.CMOS);
             cpu.Boot(0x0400);
 
             ushort prev_pc;
@@ -62,7 +62,7 @@ namespace KDS.e6502UnitTests
              */
 
             var bus = new BusDevice(File.ReadAllBytes($"{ResourcePath}65C02_extended_opcodes_test.bin"), 0x0000);
-            var cpu = new CPU(bus, e6502Type.CMOS);
+            var cpu = new CPU6502(bus, e6502Type.CMOS);
             cpu.Boot(0x0400);
 
             ushort prev_pc;
@@ -87,7 +87,7 @@ namespace KDS.e6502UnitTests
              */
 
             var bus = new BusDevice(File.ReadAllBytes($"{ResourcePath}6502_functional_test.bin"), 0x0000);
-            var cpu = new CPU(bus, e6502Type.CMOS);
+            var cpu = new CPU6502(bus, e6502Type.CMOS);
             cpu.Boot(0x0400);
 
             ushort prev_pc;
@@ -113,7 +113,7 @@ namespace KDS.e6502UnitTests
              */
 
             var bus = new BusDevice(File.ReadAllBytes($"{ResourcePath}6502_interrupt_test.bin"), 0x0400);
-            var cpu = new CPU(bus, e6502Type.NMOS);
+            var cpu = new CPU6502(bus, e6502Type.NMOS);
             cpu.Boot(0x0400);
 
             ushort prev_pc;
