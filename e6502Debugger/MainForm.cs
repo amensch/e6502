@@ -5,7 +5,7 @@ namespace e6502Debugger
 {
     public partial class MainForm : Form
     {
-        private CPU cpu;
+        private CPU6502 cpu;
 
         public MainForm()
         {
@@ -37,7 +37,7 @@ namespace e6502Debugger
         private void LoadFile(string file)
         {
             var bus = new BusDevice(File.ReadAllBytes(file), 0xf000);
-            cpu = new CPU(bus, e6502Type.NMOS);
+            cpu = new CPU6502(bus, e6502Type.NMOS);
             UpdateScreen();
         }
 
